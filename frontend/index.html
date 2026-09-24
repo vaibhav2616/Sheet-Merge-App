@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SheetMerge Pro — Intelligent Outreach CRM & Deliverability Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Outer Application Canvas -->
+  <div class="app-canvas">
+    
+    <!-- Left Navigation Rail (Desktop) / Bottom Nav Bar (Mobile) -->
+    <nav class="nav-rail">
+      <div class="rail-top">
+        <div class="rail-brand" title="SheetMerge Pro">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <button class="rail-btn active" title="Pipeline & Deals" onclick="window.sheetmerge.filterByStage('All')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </button>
+        <button class="rail-btn" title="Leads & Contacts" onclick="document.getElementById('tableSearchInput').focus()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </button>
+        <button class="rail-btn" title="Today's Follow-ups" onclick="document.querySelector('.followups-tile').scrollIntoView({behavior:'smooth'})">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </button>
+        <button class="rail-btn" title="Outreach Analytics & Reports" onclick="window.sheetmerge.openPalette()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="20" x2="12" y2="10"></line>
+            <line x1="18" y1="20" x2="18" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="16"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="rail-bottom">
+        <button class="rail-btn" title="Quick Search (Ctrl+K)" onclick="window.sheetmerge.openPalette()">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+        <div class="rail-avatar" title="Vaibhav Rastogi (Deliverability Lead)">VR</div>
+      </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <div class="header-brand-pill">
+          <span style="font-weight:700; color:var(--text-main);">SheetMerge Pro</span>
+          <span class="date-label">Oct 2026 · Deliverability Shield Active</span>
+        </div>
+
+        <div class="header-actions">
+          <button class="action-pill-btn" onclick="window.sheetmerge.openPalette()" title="Command Palette (Ctrl+K / Cmd+K)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span style="font-size:12px; font-weight:600; opacity:0.85;">Search</span>
+            <kbd style="background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-size:10px;">⌘K</kbd>
+          </button>
+          
+          <button class="action-pill-btn" title="System Alerts & 50-Daily Quota">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            <span class="notification-count">9+</span>
+          </button>
+
+          <button class="action-pill-btn" id="themeToggleBtn" onclick="window.sheetmerge.toggleTheme()" title="Toggle Dark / Light Theme">
+            🌙
+          </button>
+
+          <button class="coral-add-btn" onclick="window.sheetmerge.openAddLeadModal()" title="Add New Lead or Outreach Contact">
+            +
+          </button>
+        </div>
+      </header>
+
+      <!-- Bento-Box Grid Layout -->
+      <section class="bento-grid">
+
+        <!-- 1. Hero Pipeline Tile -->
+        <div class="hero-tile">
+          <div class="hero-header">
+            <div class="hero-title-group">
+              <h2>Pipeline</h2>
+              <h3>Open deals</h3>
+              <div class="hero-value-wrap">
+                <div class="hero-giant-val" id="heroOpenValue">₹62,00,500</div>
+                <div class="hero-val-sub">open value</div>
+              </div>
+            </div>
+
+            <div class="hero-metrics-side">
+              <div class="metric-item">
+                <div class="metric-label">Conversion rate</div>
+                <div class="metric-val" style="color:#10b981;">32%</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">Avg. first response</div>
+                <div class="metric-val">4.4h</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">Active leads</div>
+                <div class="metric-val">67</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Pillar Bar Chart -->
+          <div class="pillar-chart" id="pillarChart">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- 2. Follow-ups Tile (Upper Right) -->
+        <div class="followups-tile">
+          <div class="followups-header">
+            <div class="followups-title">
+              Today's<br>
+              <span style="font-weight:400; color:var(--text-muted);">Follow-ups</span>
+            </div>
+            <div class="followups-left-badge">
+              <strong id="followupsLeftCount">6</strong> left
+            </div>
+          </div>
+
+          <div class="followups-list" id="followupsList">
+            <!-- Dynamic follow-up items with avatars and checkmarks -->
+          </div>
+        </div>
+
+        <!-- 3. Middle Row: Overdue Alert & Status Filter -->
+        <div class="middle-row-wrap">
+          
+          <!-- Overdue Card (Peach Warm Bento) -->
+          <div class="overdue-tile">
+            <div>
+              <div class="overdue-badge-label" id="overdueCounterBadge">Overdue · 1 of 4</div>
+              <div class="overdue-lead-name" id="overdueLeadName">Aisha Bello</div>
+              <div class="overdue-lead-details" id="overdueLeadDetails">Lagos Digital · was due 3 days ago</div>
+            </div>
+            <div class="overdue-nav-arrows">
+              <button class="nav-arrow-btn" onclick="window.sheetmerge.prevOverdue()" title="Previous overdue lead">←</button>
+              <button class="nav-arrow-btn" onclick="window.sheetmerge.nextOverdue()" title="Next overdue lead">→</button>
+            </div>
+          </div>
+
+          <!-- Filter By Status (Burnt Orange / Coral Card) -->
+          <div class="filter-tile">
+            <div>
+              <div class="filter-top-header">
+                <div class="filter-title">
+                  Filter<br>
+                  <span style="font-weight:400; opacity:0.9;">By status</span>
+                </div>
+                <div style="font-size:12px; font-weight:600; opacity:0.85;" id="totalFilterCount">132 shown</div>
+              </div>
+
+              <!-- Filter Pills (All, New, Contacted, Qualified, Proposal Sent, Won, Lost) -->
+              <div class="filter-pills-row" id="filterPillsRow">
+                <!-- Rendered dynamically by app.js -->
+              </div>
+            </div>
+
+            <div class="filter-won-block">
+              <div class="won-label">Won this month</div>
+              <div class="won-amount" id="wonAmountVal">₹26,61,000</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 4. Leads & Contacts Data Table Tile -->
+        <div class="leads-tile">
+          <div class="leads-tile-header">
+            <div class="leads-tile-title">
+              <h3>Leads & Outreach Targets</h3>
+              <p>All statuses · YAMM Single 'Merge Status' Column Compliant · 50 Sends Quota Protected</p>
+            </div>
+
+            <div class="leads-controls">
+              <input type="text" class="search-input-pill" id="tableSearchInput" placeholder="Search leads, company, email...">
+              <button class="btn-coral" style="padding:8px 18px; font-size:12px;" onclick="window.sheetmerge.openAddLeadModal()">+ Add lead</button>
+            </div>
+          </div>
+
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Name & Company</th>
+                <th style="width: 22%;">Merge Status</th>
+                <th style="width: 35%;">Latest Note / Activity</th>
+                <th style="width: 15%;">Deal Value</th>
+              </tr>
+            </thead>
+            <tbody id="leadsTableBody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Slide-Out Lead Drawer (Right Side) -->
+  <div class="lead-drawer-backdrop" id="leadDrawerBackdrop" onclick="window.sheetmerge.closeLeadDrawer()"></div>
+  <aside class="lead-drawer" id="leadDrawer">
+    <div class="drawer-header">
+      <div>
+        <h3 id="drawerLeadName">Emma Novak</h3>
+        <p id="drawerLeadSub">Vista Travel · +1-555-0101 · ₹83,000</p>
+      </div>
+      <button class="drawer-close-btn" onclick="window.sheetmerge.closeLeadDrawer()" title="Close drawer">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="drawer-section-title">Update Lead Status</div>
+      <div class="drawer-status-selector" id="drawerStatusSelector">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="drawer-section-title">Activity Timeline</div>
+      <div class="drawer-timeline" id="drawerTimeline">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="drawer-section-title">Add Note or Meeting Memo</div>
+      <textarea class="drawer-note-input" id="drawerNoteInput" placeholder="What was discussed? Log next steps, delivery updates..."></textarea>
+      <button class="save-note-btn" onclick="window.sheetmerge.saveDrawerNote()">Save Note & Update</button>
+    </div>
+  </aside>
+
+  <!-- Add Lead Modal -->
+  <div class="modal-backdrop" id="addLeadModal" onclick="if(event.target===this) window.sheetmerge.closeAddLeadModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Add New Lead</h3>
+        <button class="drawer-close-btn" onclick="window.sheetmerge.closeAddLeadModal()">✕</button>
+      </div>
+
+      <form onsubmit="window.sheetmerge.handleCreateLead(event)">
+        <div class="modal-form-group">
+          <label class="modal-label">Full Name *</label>
+          <input type="text" class="modal-input" id="modalLeadName" placeholder="e.g. Elena Ruiz" required>
+        </div>
+
+        <div class="modal-form-group">
+          <label class="modal-label">Work Email *</label>
+          <input type="email" class="modal-input" id="modalLeadEmail" placeholder="elena@company.com" required>
+        </div>
+
+        <div class="modal-form-group">
+          <label class="modal-label">Company Name</label>
+          <input type="text" class="modal-input" id="modalLeadCompany" placeholder="e.g. Northwind Solutions">
+        </div>
+
+        <div class="modal-form-group">
+          <label class="modal-label">Phone Number</label>
+          <input type="tel" class="modal-input" id="modalLeadPhone" placeholder="+1-555-0188">
+        </div>
+
+        <div class="modal-form-group">
+          <label class="modal-label">Estimated Value (₹)</label>
+          <input type="number" class="modal-input" id="modalLeadValue" placeholder="45000">
+        </div>
+
+        <div class="modal-form-group">
+          <label class="modal-label">Lead Source</label>
+          <select class="modal-select" id="modalLeadSource">
+            <option value="Website form">Website form</option>
+            <option value="Cold email">Cold email</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="Referral">Referral</option>
+            <option value="Partner">Partner</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" onclick="window.sheetmerge.closeAddLeadModal()">Cancel</button>
+          <button type="submit" class="btn-coral">Save Lead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Command Palette (Ctrl+K / Cmd+K) -->
+  <div class="palette-backdrop" id="commandPalette" onclick="if(event.target===this) window.sheetmerge.closePalette()">
+    <div class="palette-box">
+      <input type="text" class="palette-search-input" id="paletteInput" placeholder="Search leads, accounts, or type action...">
+      <div class="palette-results" id="paletteResults">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
