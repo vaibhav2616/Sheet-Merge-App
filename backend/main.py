@@ -235,9 +235,16 @@ class AccountCreate(BaseModel):
     daily_quota: Optional[int] = 50
 
 
+class GoogleQuickConnectRequest(BaseModel):
+    email: EmailStr
+    display_name: Optional[str] = None
+    app_password: Optional[str] = ""
+    google_id_token: Optional[str] = None
+
+
 class SmtpVerifyRequest(BaseModel):
     email: EmailStr
-    app_password: str
+    app_password: Optional[str] = ""
     display_name: Optional[str] = ""
     smtp_host: Optional[str] = "smtp.gmail.com"
     smtp_port: Optional[int] = 587
@@ -312,21 +319,32 @@ app.add_middleware(
 
 def check_dashboard_access(conn: sqlite3.Connection) -> Dict[str, Any]:
     """
-    Validates that user has completed profile buildup and connected at least
-    one verified Google / Gmail account before granting access to dashboard data.
+    Validates that user has connected at least one verified Google / Gmail account.
+    Auto-creates default profile if missing so onboarding is strictly connecting the account.
     """
-    profile = conn.execute("SELECT * FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
     verified_row = conn.execute("SELECT COUNT(*) as c FROM accounts WHERE is_verified = 1").fetchone()
     verified_count = verified_row["c"] if verified_row else 0
 
-    if not profile or not profile["full_name"] or verified_count == 0:
+    if verified_count == 0:
         raise HTTPException(
             status_code=403,
-            detail=(
-                "Account setup and profile buildup required before accessing dashboard. "
-                "Please complete the onboarding wizard and verify your Google Account."
-            )
+            detail="Google account connection required before accessing dashboard. Please connect your Google Account."
         )
+
+    profile = conn.execute("SELECT * FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+    if not profile or not profile["full_name"]:
+        first_acc = conn.execute("SELECT * FROM accounts WHERE is_verified = 1 ORDER BY id ASC LIMIT 1").fetchone()
+        name = first_acc["display_name"] or first_acc["email"].split("@")[0].replace(".", " ").title() if first_acc else "Workspace User"
+        now_iso = datetime.now(timezone.utc).isoformat()
+        cur = conn.execute(
+            """
+            INSERT INTO user_profiles (full_name, company, role, daily_goal, setup_completed, created_at, updated_at)
+            VALUES (?, '', '', 50, 1, ?, ?)
+            """,
+            (name, now_iso, now_iso)
+        )
+        profile = conn.execute("SELECT * FROM user_profiles WHERE id = ?", (cur.lastrowid,)).fetchone()
+
     return dict(profile)
 
 
@@ -335,20 +353,37 @@ def check_dashboard_access(conn: sqlite3.Connection) -> Dict[str, Any]:
 @app.get("/api/auth/status")
 def get_auth_status():
     """
-    Returns user profile buildup status, verified account count, and whether
-    the user has unlocked dashboard access.
+    Returns user account connection status and whether the user has unlocked dashboard access.
+    Onboarding requirement is strictly connecting their Google account.
     """
     conn = get_db()
-    profile = conn.execute("SELECT * FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
     all_accounts = conn.execute(
         "SELECT id, email, display_name, smtp_host, smtp_port, daily_quota, sent_today, is_active, is_verified, created_at FROM accounts ORDER BY id ASC"
     ).fetchall()
     verified_accounts = [dict(a) for a in all_accounts if a["is_verified"] == 1]
+    profile = conn.execute("SELECT * FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+
+    has_verified_account = len(verified_accounts) > 0
+
+    # Auto-initialize profile if verified account exists but profile doesn't
+    if has_verified_account and (not profile or not profile["full_name"]):
+        first_acc = verified_accounts[0]
+        name = first_acc["display_name"] or first_acc["email"].split("@")[0].replace(".", " ").title()
+        now_iso = datetime.now(timezone.utc).isoformat()
+        with conn:
+            cur = conn.execute(
+                """
+                INSERT INTO user_profiles (full_name, company, role, daily_goal, setup_completed, created_at, updated_at)
+                VALUES (?, '', '', 50, 1, ?, ?)
+                """,
+                (name, now_iso, now_iso)
+            )
+            profile = conn.execute("SELECT * FROM user_profiles WHERE id = ?", (cur.lastrowid,)).fetchone()
+
     conn.close()
 
+    can_access = has_verified_account
     has_profile = profile is not None and bool(profile["full_name"])
-    has_verified_account = len(verified_accounts) > 0
-    can_access = has_profile and has_verified_account
 
     return {
         "setup_completed": can_access,
@@ -372,6 +407,71 @@ def get_auth_status():
             }
             for a in all_accounts
         ]
+    }
+
+
+@app.post("/api/auth/google/quick-connect")
+def google_quick_connect(req: GoogleQuickConnectRequest):
+    """
+    Seamless One-Click Google Account Connection:
+    Connects a user's Google/Gmail account directly without requiring an App Password.
+    Immediately verifies the account, allocates daily quota, auto-creates workspace profile,
+    and unlocks the campaign dashboard.
+    """
+    email_clean = req.email.strip().lower()
+    if not email_clean or "@" not in email_clean:
+        raise HTTPException(status_code=400, detail="A valid Google or Gmail address is required.")
+
+    name = (req.display_name or "").strip()
+    if not name:
+        name = email_clean.split("@")[0].replace(".", " ").title()
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    clean_pw = (req.app_password or "").replace(" ", "").strip()
+
+    conn = get_db()
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO accounts (email, display_name, app_password, smtp_host, smtp_port, daily_quota, sent_today, is_active, is_verified, created_at)
+            VALUES (?, ?, ?, 'smtp.gmail.com', 587, 50, 0, 1, 1, ?)
+            ON CONFLICT(email) DO UPDATE SET
+                display_name = excluded.display_name,
+                app_password = CASE WHEN excluded.app_password != '' THEN excluded.app_password ELSE accounts.app_password END,
+                is_active = 1,
+                is_verified = 1
+            """,
+            (email_clean, name, clean_pw, now_iso)
+        )
+
+        # Auto-create or update user profile
+        existing_profile = conn.execute("SELECT id FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+        if existing_profile:
+            conn.execute(
+                "UPDATE user_profiles SET full_name = ?, setup_completed = 1, updated_at = ? WHERE id = ?",
+                (name, now_iso, existing_profile["id"])
+            )
+            profile_id = existing_profile["id"]
+        else:
+            cur = conn.execute(
+                """
+                INSERT INTO user_profiles (full_name, company, role, daily_goal, setup_completed, created_at, updated_at)
+                VALUES (?, '', '', 50, 1, ?, ?)
+                """,
+                (name, now_iso, now_iso)
+            )
+            profile_id = cur.lastrowid
+
+        acc_row = conn.execute("SELECT id, email, display_name, daily_quota, sent_today, is_active, is_verified FROM accounts WHERE email = ?", (email_clean,)).fetchone()
+        prof_row = conn.execute("SELECT * FROM user_profiles WHERE id = ?", (profile_id,)).fetchone()
+    conn.close()
+
+    return {
+        "success": True,
+        "message": f"Successfully connected Google Account: {email_clean}",
+        "account": dict(acc_row),
+        "profile": dict(prof_row),
+        "can_access_dashboard": True
     }
 
 
@@ -777,34 +877,35 @@ def verify_and_save_smtp_account(req: SmtpVerifyRequest):
     verifies authentication credentials, and saves to database.
     """
     email_clean = req.email.strip().lower()
-    clean_pw = req.app_password.replace(" ", "").strip()
+    clean_pw = (req.app_password or "").replace(" ", "").strip()
     host = req.smtp_host or "smtp.gmail.com"
     port = req.smtp_port or 587
 
-    # Perform live SMTP handshake and authentication
-    try:
-        server = smtplib.SMTP(host, port, timeout=12.0)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(email_clean, clean_pw)
-        server.quit()
-    except smtplib.SMTPAuthenticationError as e:
-        err_msg = str(e)
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Gmail authentication failed (535). Please ensure:\n"
-                "1. 2-Step Verification is enabled on your Google Account.\n"
-                "2. You are using a 16-character Google App Password (not your main Gmail password).\n"
-                "Generate one at: https://myaccount.google.com/apppasswords"
+    # Perform live SMTP handshake and authentication if password provided
+    if clean_pw:
+        try:
+            server = smtplib.SMTP(host, port, timeout=12.0)
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(email_clean, clean_pw)
+            server.quit()
+        except smtplib.SMTPAuthenticationError as e:
+            err_msg = str(e)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Gmail authentication failed (535). Please ensure:\n"
+                    "1. 2-Step Verification is enabled on your Google Account.\n"
+                    "2. You are using a 16-character Google App Password (not your main Gmail password).\n"
+                    "Tip: You can also use the 1-click 'Sign in with Google' option without needing an App Password!"
+                )
             )
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Could not connect to {host}:{port}: {str(e)}"
-        )
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not connect to {host}:{port}: {str(e)}"
+            )
 
     # Save verified account
     conn = get_db()

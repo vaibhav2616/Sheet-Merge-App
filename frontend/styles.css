@@ -1266,3 +1266,138 @@ body {
   .form-grid { grid-template-columns: 1fr; }
   .form-group.full-width { grid-column: span 1; }
 }
+
+/* ==============================================================
+   SINGLE-SCREEN ONBOARDING & GOOGLE SIGN-IN
+   ============================================================== */
+.single-screen-onboarding {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+.compact-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.compact-header h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+.compact-header p {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto;
+}
+.onboarding-single-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(16px);
+}
+.google-auth-hero-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.btn-google-signin {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #ffffff;
+  color: #1f2937;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.btn-google-signin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(66, 133, 244, 0.25);
+  background: #f8fafc;
+}
+.google-auth-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--card-border-subtle);
+}
+.auth-divider span {
+  padding: 0 12px;
+}
+.advanced-smtp-accordion {
+  margin-top: 14px;
+  border: 1px solid var(--card-border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+.advanced-smtp-accordion summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 600;
+  user-select: none;
+}
+.advanced-smtp-accordion summary:hover {
+  color: var(--text-main);
+}
+.advanced-smtp-fields {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.full-width-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 14px;
+  font-size: 15px;
+}
+.security-guarantee-strip {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--card-border-subtle);
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.connected-accounts-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.section-subheading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}

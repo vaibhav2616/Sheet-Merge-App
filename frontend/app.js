@@ -59,9 +59,10 @@
   }
 
   // ── View Navigation ────────────────────────────────────────────────────
+  // ── View Navigation ────────────────────────────────────────────────────
   function navigate(viewName) {
     if (viewName === 'dashboard' && !state.authStatus.can_access_dashboard) {
-      alert('Account setup & profile buildup required! Please complete the onboarding wizard before entering the dashboard.');
+      alert('Please connect your Google Account to unlock the campaign dashboard.');
       navigate('onboarding');
       return;
     }
@@ -79,7 +80,10 @@
     // Update rail active states
     document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
     if (viewName === 'landing') document.getElementById('navLandingBtn')?.classList.add('active');
-    if (viewName === 'onboarding') document.getElementById('navOnboardingBtn')?.classList.add('active');
+    if (viewName === 'onboarding') {
+      document.getElementById('navOnboardingBtn')?.classList.add('active');
+      renderOnboardingAccounts();
+    }
     if (viewName === 'dashboard') {
       document.getElementById('navDashboardBtn')?.classList.add('active');
       loadDashboardData();
@@ -102,6 +106,7 @@
       if (res.ok) {
         state.authStatus = await res.json();
         updateUserBadges();
+        renderOnboardingAccounts();
       }
     } catch (e) {
       console.warn('Could not check auth status', e);
@@ -115,139 +120,119 @@
 
     if (p && p.full_name) {
       const initials = p.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-      if (avatarEl) avatarEl.textContent = initials;
+      if (avatarEl) avatarEl.textContent = initials || 'SM';
       if (badgeEl) badgeEl.textContent = `👤 ${p.full_name} (${p.company || 'Workspace'})`;
-      
-      // Auto-populate profile input if editing
-      const nameInput = document.getElementById('profFullName');
-      const compInput = document.getElementById('profCompany');
-      const roleInput = document.getElementById('profRole');
-      if (nameInput && !nameInput.value) nameInput.value = p.full_name;
-      if (compInput && !compInput.value) compInput.value = p.company || '';
-      if (roleInput && !roleInput.value) roleInput.value = p.role || '';
     }
   }
 
-  // ── Onboarding Wizard Stepper ──────────────────────────────────────────
-  function goToStep(stepNum) {
-    state.wizardStep = stepNum;
+  // ── Single-Step Google Account Connection & Sign In ─────────────────────
+  async function signInWithGoogle() {
+    const existing = document.getElementById('quickEmail')?.value.trim();
+    let email = existing;
+    if (!email) {
+      email = prompt('Enter your Google or Gmail address to sign in:', 'user@gmail.com');
+    }
+    if (!email) return;
 
-    // Update Indicators
-    for (let i = 1; i <= 4; i++) {
-      const ind = document.getElementById(`stepIndicator${i}`);
-      const pane = document.getElementById(`wizardStep${i}`);
-      if (ind) {
-        ind.classList.remove('active');
-        if (i === stepNum) ind.classList.add('active');
-        if (i < stepNum) ind.classList.add('completed');
-      }
-      if (pane) {
-        pane.classList.remove('active');
-        if (i === stepNum) pane.classList.add('active');
-      }
+    email = email.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      alert('Please enter a valid Google or Gmail address.');
+      return;
     }
 
-    if (stepNum === 2) {
-      renderWizardAccountsList();
-    }
-  }
-
-  async function handleProfileSubmit(event) {
-    event.preventDefault();
-    const fullName = document.getElementById('profFullName').value.trim();
-    const company = document.getElementById('profCompany').value.trim();
-    const role = document.getElementById('profRole').value.trim();
-    const goal = parseInt(document.getElementById('profGoal').value, 10);
+    const defaultName = email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const btn = document.getElementById('btnGoogleSignIn');
+    if (btn) btn.disabled = true;
 
     try {
-      const res = await fetch('/api/auth/setup-profile', {
+      const res = await fetch('/api/auth/google/quick-connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: fullName, company, role, daily_goal: goal })
+        body: JSON.stringify({ email, display_name: defaultName })
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.success) {
         await checkAuthStatus();
-        goToStep(2);
+        alert(`✓ Successfully signed in with Google as ${email}! Workspace activated.`);
+        navigate('dashboard');
       } else {
-        alert(data.detail || 'Could not save profile');
+        alert(data.detail || 'Could not connect Google account.');
       }
     } catch (e) {
-      alert('Network error saving profile');
+      alert('Network error connecting Google account.');
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
-  async function handleAccountVerify(event) {
+  async function handleQuickConnect(event) {
     event.preventDefault();
-    const email = document.getElementById('wizAccEmail').value.trim();
-    const name = document.getElementById('wizAccName').value.trim();
-    const password = document.getElementById('wizAccPassword').value.trim();
+    const email = document.getElementById('quickEmail').value.trim();
+    const name = document.getElementById('quickName')?.value.trim() || '';
+    const password = document.getElementById('quickAppPassword')?.value.trim() || '';
+    const host = document.getElementById('quickHost')?.value.trim() || 'smtp.gmail.com';
+    const port = parseInt(document.getElementById('quickPort')?.value || '587', 10);
 
-    const btn = document.getElementById('btnVerifyAccount');
-    const btnText = document.getElementById('btnVerifyText');
-    btn.disabled = true;
-    btnText.textContent = 'Testing SMTP Handshake...';
+    const btn = document.getElementById('btnQuickConnect');
+    const btnText = document.getElementById('btnQuickConnectText');
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.textContent = 'Connecting Account...';
 
     try {
-      const res = await fetch('/api/accounts/verify-smtp', {
+      let endpoint = '/api/auth/google/quick-connect';
+      let payload = { email, display_name: name };
+
+      if (password) {
+        endpoint = '/api/accounts/verify-smtp';
+        payload = { email, app_password: password, display_name: name, smtp_host: host, smtp_port: port };
+      }
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, app_password: password, display_name: name })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
-        alert(`✓ Verified ${email} successfully on Gmail SMTP!`);
-        document.getElementById('wizardAccountForm').reset();
         await checkAuthStatus();
-        renderWizardAccountsList();
+        alert(`✓ Successfully connected ${email}! Unlocking campaign dashboard...`);
+        navigate('dashboard');
       } else {
-        alert(data.detail || 'SMTP Verification failed. Please verify your 16-character App Password.');
+        alert(data.detail || 'Failed to connect Google account.');
       }
     } catch (e) {
-      alert('Failed to connect to backend SMTP relay.');
+      alert('Network error connecting Google account.');
     } finally {
-      btn.disabled = false;
-      btnText.textContent = 'Authenticate & Save Account';
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.textContent = 'Connect Account & Unlock Dashboard';
     }
   }
 
-  function renderWizardAccountsList() {
-    const listEl = document.getElementById('wizardAccountsList');
-    const nextBtn = document.getElementById('btnStep2Next');
-    if (!listEl) return;
+  function renderOnboardingAccounts() {
+    const section = document.getElementById('onboardingConnectedSection');
+    const listEl = document.getElementById('onboardingAccountsList');
+    if (!section || !listEl) return;
 
-    listEl.innerHTML = '';
     const accounts = state.authStatus.accounts || [];
-
-    if (accounts.length === 0) {
-      listEl.innerHTML = `
-        <div style="font-size:12px; color:var(--text-muted); padding:10px; background:var(--card-surface); border-radius:10px;">
-          No Google accounts connected yet. Connect your first Gmail account below.
+    if (accounts.length > 0) {
+      section.style.display = 'block';
+      listEl.innerHTML = accounts.map(a => `
+        <div class="account-badge-card" style="margin-bottom:8px;">
+          <div class="email-info">
+            <strong>${a.email}</strong>
+            <span>${a.display_name || 'Sender'} · Daily quota: ${a.daily_quota}/day</span>
+          </div>
+          <div>
+            <span class="status-badge ${a.is_verified ? 'verified' : 'unverified'}">
+              ${a.is_verified ? '✓ CONNECTED' : 'UNVERIFIED'}
+            </span>
+          </div>
         </div>
-      `;
-      if (nextBtn) nextBtn.disabled = true;
-      return;
+      `).join('');
+    } else {
+      section.style.display = 'none';
     }
-
-    if (nextBtn) nextBtn.disabled = false;
-
-    accounts.forEach(a => {
-      const card = document.createElement('div');
-      card.className = 'account-badge-card';
-      card.innerHTML = `
-        <div class="email-info">
-          <strong>${a.email}</strong>
-          <span>${a.display_name || 'Sender'} · Daily quota: ${a.daily_quota}/day</span>
-        </div>
-        <div>
-          <span class="status-badge ${a.is_verified ? 'verified' : 'unverified'}">
-            ${a.is_verified ? '✓ VERIFIED' : 'UNVERIFIED'}
-          </span>
-        </div>
-      `;
-      listEl.appendChild(card);
-    });
   }
 
   // ── Sheet / CSV Import in Wizard ───────────────────────────────────────
@@ -728,33 +713,37 @@
   async function handleModalAccountSubmit(event) {
     event.preventDefault();
     const email = document.getElementById('modalAccEmail').value.trim();
-    const name = document.getElementById('modalAccName').value.trim();
-    const password = document.getElementById('modalAccPassword').value.trim();
+    const name = document.getElementById('modalAccName')?.value.trim() || '';
+    const password = document.getElementById('modalAccPassword')?.value.trim() || '';
 
     const btn = document.getElementById('btnModalVerify');
     btn.disabled = true;
-    btn.textContent = 'Testing Handshake...';
+    btn.textContent = password ? 'Testing Handshake...' : 'Connecting...';
 
     try {
-      const res = await fetch('/api/accounts/verify-smtp', {
+      const endpoint = password ? '/api/accounts/verify-smtp' : '/api/auth/google/quick-connect';
+      const payload = password ? { email, app_password: password, display_name: name } : { email, display_name: name };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, app_password: password, display_name: name })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`✓ Verified ${email} on Gmail SMTP!`);
+        alert(`✓ Connected ${email} successfully!`);
         closeAddAccountModal();
         document.getElementById('modalAccountForm').reset();
+        await checkAuthStatus();
         await loadDashboardData();
       } else {
-        alert(data.detail || 'SMTP Verification failed');
+        alert(data.detail || 'Connection failed');
       }
     } catch (e) {
-      alert('Error verifying account');
+      alert('Error connecting account');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Verify & Connect';
+      btn.textContent = 'Connect Account';
     }
   }
 
@@ -829,13 +818,9 @@
   window.sheetmerge = {
     navigate,
     toggleTheme,
-    goToStep,
-    handleProfileSubmit,
-    handleAccountVerify,
-    importWizardSheet,
-    handleWizardFileSelect,
-    launchLoadingScreen,
-    completeOnboardingAndEnterDashboard,
+    signInWithGoogle,
+    handleQuickConnect,
+    renderOnboardingAccounts,
     filterRecipients,
     dispatchSingleRow,
     startCampaignDispatch,

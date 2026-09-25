@@ -386,6 +386,34 @@ class TestSheetMergeRealWorldFeatures(unittest.TestCase):
         self.assertTrue(data["success"])
         self.assertEqual(data["dispatched_count"], 2)
 
+    def test_API21_google_quick_connect_and_auto_profile(self):
+        # Reset workspace to test clean quick connect onboarding
+        client.post("/api/auth/reset")
+
+        # Prior to connect, dashboard should be locked
+        r_pre = client.get("/api/auth/status")
+        self.assertFalse(r_pre.json()["can_access_dashboard"])
+
+        # Quick connect Google account without App Password
+        r_conn = client.post("/api/auth/google/quick-connect", json={
+            "email": "vaibhav.quick@gmail.com",
+            "display_name": "Vaibhav Quick"
+        })
+        self.assertEqual(r_conn.status_code, 200)
+        conn_data = r_conn.json()
+        self.assertTrue(conn_data["success"])
+        self.assertTrue(conn_data["can_access_dashboard"])
+        self.assertEqual(conn_data["account"]["email"], "vaibhav.quick@gmail.com")
+        self.assertEqual(conn_data["account"]["is_verified"], 1)
+
+        # Dashboard should now be unlocked immediately
+        r_post = client.get("/api/auth/status")
+        post_data = r_post.json()
+        self.assertTrue(post_data["can_access_dashboard"])
+        self.assertTrue(post_data["has_verified_account"])
+        self.assertIsNotNone(post_data["profile"])
+        self.assertEqual(post_data["profile"]["full_name"], "Vaibhav Quick")
+
 
 if __name__ == "__main__":
     unittest.main()
