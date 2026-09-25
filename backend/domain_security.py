@@ -50,8 +50,8 @@ def check_domain_dns(domain: str, dkim_selector: str = "google") -> Dict[str, An
         return results
 
     resolver = dns.resolver.Resolver()
-    resolver.timeout = 8.0
-    resolver.lifetime = 8.0
+    resolver.timeout = 2.0
+    resolver.lifetime = 2.0
 
     # 1. MX Records
     try:
