@@ -3,64 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SheetMerge Pro — Intelligent Outreach CRM & Deliverability Engine</title>
+  <title>SheetMerge Pro — Mail Merge Campaign & Deliverability Shield</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
-  <!-- Outer Application Canvas -->
+  <!-- Outer Application Canvas Frame -->
   <div class="app-canvas">
     
-    <!-- Left Navigation Rail (Desktop) / Bottom Nav Bar (Mobile) -->
+    <!-- Navigation Rail (Desktop Vertical / Mobile Bottom Dock) -->
     <nav class="nav-rail">
       <div class="rail-top">
         <div class="rail-brand" title="SheetMerge Pro">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
         </div>
-        <button class="rail-btn active" title="Pipeline & Deals" onclick="window.sheetmerge.filterByStage('All')">
+        <button class="rail-btn active" title="Campaign Dashboard" onclick="window.sheetmerge.filterByStage('All')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
           </svg>
         </button>
-        <button class="rail-btn" title="Leads & Contacts" onclick="document.getElementById('tableSearchInput').focus()">
+        <button class="rail-btn" title="Recipient Merge List" onclick="document.getElementById('tableSearchInput').focus()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
           </svg>
         </button>
-        <button class="rail-btn" title="Today's Follow-ups" onclick="document.querySelector('.followups-tile').scrollIntoView({behavior:'smooth'})">
+        <button class="rail-btn" title="Deliverability DNS Shield" onclick="document.querySelector('.security-tile').scrollIntoView({behavior:'smooth'})">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         </button>
-        <button class="rail-btn" title="Outreach Analytics & Reports" onclick="window.sheetmerge.openPalette()">
+        <button class="rail-btn" title="Compose Campaign Template" onclick="window.sheetmerge.openComposeDrawer()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="20" x2="12" y2="10"></line>
-            <line x1="18" y1="20" x2="18" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="16"></line>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
         </button>
       </div>
 
       <div class="rail-bottom">
         <button class="rail-btn" title="Quick Search (Ctrl+K)" onclick="window.sheetmerge.openPalette()">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </button>
         <div class="rail-avatar" title="Vaibhav Rastogi (Deliverability Lead)">VR</div>
       </div>
@@ -72,28 +69,24 @@
       <!-- Top Header Bar -->
       <header class="top-header">
         <div class="header-brand-pill">
-          <span style="font-weight:700; color:var(--text-main);">SheetMerge Pro</span>
-          <span class="date-label">Oct 2026 · Deliverability Shield Active</span>
+          <span style="font-weight:700;">SheetMerge Pro</span>
+          <span class="badge-shield">🛡️ 50-Daily Verified Quota Shield Active</span>
         </div>
 
         <div class="header-actions">
-          <button class="action-pill-btn" onclick="window.sheetmerge.openPalette()" title="Command Palette (Ctrl+K / Cmd+K)">
+          <button class="action-pill-btn" onclick="window.sheetmerge.openPalette()" title="Command Palette (Ctrl+K)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <span style="font-size:12px; font-weight:600; opacity:0.85;">Search</span>
             <kbd style="background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-size:10px;">⌘K</kbd>
           </button>
-          
-          <button class="action-pill-btn" title="System Alerts & 50-Daily Quota">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span class="notification-count">9+</span>
-          </button>
 
-          <button class="action-pill-btn" id="themeToggleBtn" onclick="window.sheetmerge.toggleTheme()" title="Toggle Dark / Light Theme">
+          <button class="action-pill-btn" id="themeToggleBtn" onclick="window.sheetmerge.toggleTheme()" title="Toggle Theme">
             🌙
           </button>
 
-          <button class="coral-add-btn" onclick="window.sheetmerge.openAddLeadModal()" title="Add New Lead or Outreach Contact">
-            +
+          <button class="primary-add-btn" onclick="window.sheetmerge.openComposeDrawer()" title="Compose Mail Merge Template">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Compose Merge</span>
           </button>
         </div>
       </header>
@@ -101,123 +94,195 @@
       <!-- Bento-Box Grid Layout -->
       <section class="bento-grid">
 
-        <!-- 1. Hero Pipeline Tile -->
+        <!-- 1. Hero Tile: Mail Merge Campaign Center & 50-Daily Quota -->
         <div class="hero-tile">
           <div class="hero-header">
             <div class="hero-title-group">
-              <h2>Pipeline</h2>
-              <h3>Open deals</h3>
+              <h2>Campaign Dispatcher</h2>
+              <h3>Daily Quota & Delivery Health</h3>
               <div class="hero-value-wrap">
-                <div class="hero-giant-val" id="heroOpenValue">₹62,00,500</div>
-                <div class="hero-val-sub">open value</div>
+                <div class="hero-giant-val" id="heroQuotaVal">42 / 50</div>
+                <div class="hero-val-sub">valid emails sent today</div>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;" id="heroQuotaSubtext">
+                <span style="color:#10b981;">✓ 8 deliveries remaining</span> · Hard bounces excluded from quota
               </div>
             </div>
 
             <div class="hero-metrics-side">
               <div class="metric-item">
-                <div class="metric-label">Conversion rate</div>
-                <div class="metric-val" style="color:#10b981;">32%</div>
+                <div class="metric-label">Open Rate</div>
+                <div class="metric-val" id="openRateVal" style="color:#a855f7;">66.7%</div>
               </div>
               <div class="metric-item">
-                <div class="metric-label">Avg. first response</div>
-                <div class="metric-val">4.4h</div>
+                <div class="metric-label">Click Rate</div>
+                <div class="metric-val" id="clickRateVal" style="color:#06b6d4;">28.6%</div>
               </div>
               <div class="metric-item">
-                <div class="metric-label">Active leads</div>
-                <div class="metric-val">67</div>
+                <div class="metric-label">Domain Health</div>
+                <div class="metric-val" id="domainHealthVal" style="color:#10b981;">98 / 100</div>
               </div>
             </div>
           </div>
 
-          <!-- Interactive Pillar Bar Chart -->
+          <!-- Dynamic Mail Merge Stage Pillar Chart -->
           <div class="pillar-chart" id="pillarChart">
-            <!-- Rendered dynamically by app.js -->
+            <!-- Populated dynamically: Queue, Sent, Opened, Clicked, Bounced -->
           </div>
         </div>
 
-        <!-- 2. Follow-ups Tile (Upper Right) -->
-        <div class="followups-tile">
-          <div class="followups-header">
-            <div class="followups-title">
-              Today's<br>
-              <span style="font-weight:400; color:var(--text-muted);">Follow-ups</span>
+        <!-- 2. Sender Accounts & Multi-Account Rotation -->
+        <div class="accounts-tile">
+          <div class="tile-header-row">
+            <div class="tile-header-title">
+              <h4>Sender Accounts</h4>
+              <p>50 Valid Sends/Account · Auto-Rotation</p>
             </div>
-            <div class="followups-left-badge">
-              <strong id="followupsLeftCount">6</strong> left
-            </div>
+            <button class="action-pill-btn" style="padding:4px 10px; font-size:11px;" onclick="window.sheetmerge.openAddAccountModal()">+ Connect Gmail</button>
           </div>
 
-          <div class="followups-list" id="followupsList">
-            <!-- Dynamic follow-up items with avatars and checkmarks -->
+          <div class="account-items-list" id="accountItemsList">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--card-border-subtle); display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; color:var(--text-muted);">Pacing: <strong>Random 2.0s–5.0s jitter</strong></span>
+            <span class="badge-shield" style="font-size:10px;">Humanized</span>
           </div>
         </div>
 
-        <!-- 3. Middle Row: Overdue Alert & Status Filter -->
+        <!-- 3. Middle Row: Pre-Flight DNS Shield & Anti-Spam Analyzer -->
         <div class="middle-row-wrap">
           
-          <!-- Overdue Card (Peach Warm Bento) -->
-          <div class="overdue-tile">
+          <!-- Pre-Flight DNS Shield -->
+          <div class="security-tile">
             <div>
-              <div class="overdue-badge-label" id="overdueCounterBadge">Overdue · 1 of 4</div>
-              <div class="overdue-lead-name" id="overdueLeadName">Aisha Bello</div>
-              <div class="overdue-lead-details" id="overdueLeadDetails">Lagos Digital · was due 3 days ago</div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="font-size:16px; font-weight:700;">Pre-Flight DNS Shield</h4>
+                <span class="badge-shield">SPF / DKIM / DMARC</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                Validates DNS alignment before sending to prevent enterprise firewall blocks.
+              </p>
+
+              <div class="dns-check-grid" id="dnsGrid">
+                <div class="dns-metric-card">
+                  <div class="dns-label">SPF Record</div>
+                  <div class="dns-status valid" id="spfStatus">✓ Valid (~all / -all)</div>
+                </div>
+                <div class="dns-metric-card">
+                  <div class="dns-label">DKIM Signature</div>
+                  <div class="dns-status valid" id="dkimStatus">✓ 2048-bit Verified</div>
+                </div>
+                <div class="dns-metric-card">
+                  <div class="dns-label">DMARC Policy</div>
+                  <div class="dns-status valid" id="dmarcStatus">✓ Protected (p=reject)</div>
+                </div>
+                <div class="dns-metric-card">
+                  <div class="dns-label">MX Server</div>
+                  <div class="dns-status valid" id="mxStatus">✓ Resolving</div>
+                </div>
+              </div>
             </div>
-            <div class="overdue-nav-arrows">
-              <button class="nav-arrow-btn" onclick="window.sheetmerge.prevOverdue()" title="Previous overdue lead">←</button>
-              <button class="nav-arrow-btn" onclick="window.sheetmerge.nextOverdue()" title="Next overdue lead">→</button>
+
+            <div class="dns-input-row">
+              <input type="text" class="dns-input" id="domainInput" value="gmail.com" placeholder="Enter sending domain...">
+              <button class="dns-check-btn" onclick="window.sheetmerge.checkDomain()">Run DNS Scan</button>
             </div>
           </div>
 
-          <!-- Filter By Status (Burnt Orange / Coral Card) -->
-          <div class="filter-tile">
+          <!-- Content Anti-Spam Analyzer -->
+          <div class="spam-tile">
             <div>
-              <div class="filter-top-header">
-                <div class="filter-title">
-                  Filter<br>
-                  <span style="font-weight:400; opacity:0.9;">By status</span>
-                </div>
-                <div style="font-size:12px; font-weight:600; opacity:0.85;" id="totalFilterCount">132 shown</div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="font-size:16px; font-weight:700;">45-Rule Spam Analyzer</h4>
+                <span style="font-size:11px; background:rgba(139,92,246,0.18); color:#c084fc; padding:3px 8px; border-radius:6px; font-weight:700;">Heuristic Engine</span>
               </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                Scans subject & body for caps ratio, trigger keywords, and link density.
+              </p>
 
-              <!-- Filter Pills (All, New, Contacted, Qualified, Proposal Sent, Won, Lost) -->
-              <div class="filter-pills-row" id="filterPillsRow">
-                <!-- Rendered dynamically by app.js -->
+              <div class="spam-score-display">
+                <div class="spam-circle" id="spamScoreCircle">96</div>
+                <div class="spam-summary-texts">
+                  <strong style="color:#10b981;" id="spamScoreLabel">High Deliverability Score</strong>
+                  <span style="color:var(--text-muted); font-size:12px;" id="spamScoreDetail">0 Spam triggers · Caps 2% · Clean link ratio</span>
+                </div>
               </div>
             </div>
 
-            <div class="filter-won-block">
-              <div class="won-label">Won this month</div>
-              <div class="won-amount" id="wonAmountVal">₹26,61,000</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:var(--text-muted);">Test message body against firewall rules:</span>
+              <button class="action-pill-btn" style="padding:6px 14px; font-size:11px;" onclick="window.sheetmerge.openComposeDrawer()">Inspect Body</button>
             </div>
           </div>
 
         </div>
 
-        <!-- 4. Leads & Contacts Data Table Tile -->
-        <div class="leads-tile">
-          <div class="leads-tile-header">
-            <div class="leads-tile-title">
-              <h3>Leads & Outreach Targets</h3>
-              <p>All statuses · YAMM Single 'Merge Status' Column Compliant · 50 Sends Quota Protected</p>
+        <!-- 4. Mail Merge Recipient List & Dispatcher Table -->
+        <div class="merge-table-tile">
+          <div class="table-header-bar">
+            <div class="table-title-area">
+              <h3>Campaign Recipients & Live Status</h3>
+              <p>YAMM Single 'Merge Status' Column Standard · Automatic 5xx Bounce Suppression</p>
             </div>
 
-            <div class="leads-controls">
-              <input type="text" class="search-input-pill" id="tableSearchInput" placeholder="Search leads, company, email...">
-              <button class="btn-coral" style="padding:8px 18px; font-size:12px;" onclick="window.sheetmerge.openAddLeadModal()">+ Add lead</button>
+            <div class="table-actions">
+              <input type="text" class="search-input-pill" id="tableSearchInput" placeholder="Filter by email, name, or company...">
+              <button class="dispatch-btn" onclick="window.sheetmerge.startCampaignDispatch()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Dispatch Campaign</span>
+              </button>
             </div>
           </div>
 
-          <table class="leads-table">
+          <!-- Real Google Sheets Ingestion & Analysis Hub Bar -->
+          <div class="sheet-ingest-bar">
+            <div class="sheet-input-wrap">
+              <span class="sheet-icon-prefix">🔗</span>
+              <input type="url" id="googleSheetUrlInput" class="sheet-url-input" placeholder="Paste public Google Sheet link (or click Load Sample)..." />
+            </div>
+            <button class="sheet-btn sheet-btn-primary" onclick="window.sheetmerge.importGoogleSheet()" id="btnImportSheet">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              <span>Connect Sheet</span>
+            </button>
+            <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none;" onchange="window.sheetmerge.handleFileSelect(event)">
+            <button class="sheet-btn sheet-btn-secondary" onclick="document.getElementById('csvFileInput').click()" title="Upload CSV or spreadsheet export">
+              📁 Upload CSV
+            </button>
+            <button class="sheet-btn sheet-btn-secondary" onclick="window.sheetmerge.loadSampleSheet()" title="Load test campaign dataset with 1 click">
+              📄 Sample Sheet
+            </button>
+            <button class="sheet-btn sheet-btn-secondary" onclick="window.sheetmerge.exportUpdatedCsv()" title="Download updated spreadsheet with YAMM Merge Status column">
+              📥 Export CSV
+            </button>
+          </div>
+
+          <!-- Built-In Sheet Analysis Banner -->
+          <div class="sheet-analysis-banner" id="sheetAnalysisBanner">
+            <div class="analysis-pills-row">
+              <span class="analysis-pill pill-valid" id="pillTotalRows">📊 <strong>10</strong> Total Recipients</span>
+              <span class="analysis-pill pill-pending" id="pillPendingRows">⏳ <strong>2</strong> Queued for Merge</span>
+              <span class="analysis-pill pill-valid" id="pillSentRows">✓ <strong>7</strong> Already Processed</span>
+              <span class="analysis-pill pill-bounced" id="pillBouncedRows">🛑 <strong>1</strong> Hard Bounce Suppressed</span>
+            </div>
+            <div style="font-size:11.5px; color:var(--text-muted);" id="detectedColsText">
+              Columns Detected: <strong style="color:var(--accent-cyan);">Email, First Name, Company, Merge Status</strong>
+            </div>
+          </div>
+
+          <table class="merge-table">
             <thead>
               <tr>
-                <th style="width: 28%;">Name & Company</th>
-                <th style="width: 22%;">Merge Status</th>
-                <th style="width: 35%;">Latest Note / Activity</th>
-                <th style="width: 15%;">Deal Value</th>
+                <th style="width: 28%;">Recipient Email</th>
+                <th style="width: 18%;">Merge Tokens (Name)</th>
+                <th style="width: 20%;">Company</th>
+                <th style="width: 20%;">Merge Status (Single Column)</th>
+                <th style="width: 14%;">Last Event</th>
               </tr>
             </thead>
-            <tbody id="leadsTableBody">
-              <!-- Rendered dynamically by app.js -->
+            <tbody id="recipientsTableBody">
+              <!-- Rendered dynamically -->
             </tbody>
           </table>
         </div>
@@ -228,97 +293,172 @@
 
   </div>
 
-  <!-- Slide-Out Lead Drawer (Right Side) -->
-  <div class="lead-drawer-backdrop" id="leadDrawerBackdrop" onclick="window.sheetmerge.closeLeadDrawer()"></div>
-  <aside class="lead-drawer" id="leadDrawer">
+  <!-- Slide-Out Compose & Template Drawer -->
+  <div class="drawer-backdrop" id="composeDrawerBackdrop" onclick="window.sheetmerge.closeComposeDrawer()"></div>
+  <aside class="compose-drawer" id="composeDrawer">
     <div class="drawer-header">
       <div>
-        <h3 id="drawerLeadName">Emma Novak</h3>
-        <p id="drawerLeadSub">Vista Travel · +1-555-0101 · ₹83,000</p>
+        <h3>Compose Mail Merge Template</h3>
+        <p style="font-size:12px; color:var(--text-muted);">Use {{Variable}} tags for personalized delivery</p>
       </div>
-      <button class="drawer-close-btn" onclick="window.sheetmerge.closeLeadDrawer()" title="Close drawer">✕</button>
+      <button class="drawer-close-btn" onclick="window.sheetmerge.closeComposeDrawer()">✕</button>
     </div>
 
     <div class="drawer-body">
-      <div class="drawer-section-title">Update Lead Status</div>
-      <div class="drawer-status-selector" id="drawerStatusSelector">
-        <!-- Rendered dynamically -->
+      <div class="field-group">
+        <label class="field-label">
+          <span>Subject Line</span>
+          <span style="font-size:11px; color:var(--accent-cyan);">Click tag to insert:</span>
+        </label>
+        <div class="variable-pills">
+          <span class="var-pill" onclick="window.sheetmerge.insertToken('{{First Name}}')">{{First Name}}</span>
+          <span class="var-pill" onclick="window.sheetmerge.insertToken('{{Company}}')">{{Company}}</span>
+          <span class="var-pill" onclick="window.sheetmerge.insertToken('{{Email}}')">{{Email}}</span>
+        </div>
+        <input type="text" class="input-box" id="templateSubject" value="Quick question for {{First Name}} at {{Company}}">
       </div>
 
-      <div class="drawer-section-title">Activity Timeline</div>
-      <div class="drawer-timeline" id="drawerTimeline">
-        <!-- Rendered dynamically -->
+      <div class="field-group">
+        <label class="field-label">Email Body (HTML / Plain Text)</label>
+        <textarea class="textarea-box" id="templateBody">Hi {{First Name}},
+
+I noticed your team at {{Company}} is scaling operations this quarter. 
+
+We built SheetMerge Pro to handle high-deliverability mail merge with single-column tracking, automatic 5xx hard bounce suppression, and humanized jitter pacing (2s–5s) to safeguard Gmail sender reputation.
+
+Would you be open to a quick 5-minute walkthrough this Thursday?
+
+Best regards,
+Vaibhav</textarea>
       </div>
 
-      <div class="drawer-section-title">Add Note or Meeting Memo</div>
-      <textarea class="drawer-note-input" id="drawerNoteInput" placeholder="What was discussed? Log next steps, delivery updates..."></textarea>
-      <button class="save-note-btn" onclick="window.sheetmerge.saveDrawerNote()">Save Note & Update</button>
+      <div class="field-group" style="background:var(--card-surface); padding:14px; border-radius:var(--radius-sub); border:1px solid var(--card-border-subtle);">
+        <label class="field-label" style="color:var(--accent-cyan);">Live Merge Preview (Row 1):</label>
+        <div id="mergePreviewContent" style="font-size:12px; color:var(--text-main); margin-top:6px; line-height:1.5;">
+          <!-- Live Preview Rendered Here -->
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+        <button class="action-pill-btn" style="justify-content:center; padding:10px;" onclick="window.sheetmerge.sendTestEmail()">
+          ✉️ Send Test Email to My Gmail
+        </button>
+        <button class="dispatch-btn" style="justify-content:center; padding:12px;" onclick="window.sheetmerge.startCampaignDispatch()">
+          🚀 Launch Live Mail Merge
+        </button>
+      </div>
     </div>
   </aside>
 
-  <!-- Add Lead Modal -->
-  <div class="modal-backdrop" id="addLeadModal" onclick="if(event.target===this) window.sheetmerge.closeAddLeadModal()">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3>Add New Lead</h3>
-        <button class="drawer-close-btn" onclick="window.sheetmerge.closeAddLeadModal()">✕</button>
+  <!-- Connect Gmail / Sender Account Modal -->
+  <div class="drawer-backdrop" id="addAccountModal" onclick="if(event.target===this) window.sheetmerge.closeAddAccountModal()">
+    <div style="background:var(--card-dark); border:1px solid var(--accent-primary); border-radius:var(--radius-tile); padding:28px; width:100%; max-width:480px; margin:auto; margin-top:12vh; box-shadow:0 25px 70px rgba(0,0,0,0.85);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:18px; font-weight:700;">Connect Gmail Account</h3>
+        <span class="badge-shield">TLS 587</span>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+        Deliver real emails through Gmail SMTP. Generates high inbox placement and bypasses spam filters.
+      </p>
+
+      <div class="field-group" style="margin-bottom:12px;">
+        <label class="field-label">Gmail Address</label>
+        <input type="email" class="input-box" id="newAccountEmail" placeholder="yourname@gmail.com">
       </div>
 
-      <form onsubmit="window.sheetmerge.handleCreateLead(event)">
-        <div class="modal-form-group">
-          <label class="modal-label">Full Name *</label>
-          <input type="text" class="modal-input" id="modalLeadName" placeholder="e.g. Elena Ruiz" required>
-        </div>
+      <div class="field-group" style="margin-bottom:12px;">
+        <label class="field-label">Sender Display Name</label>
+        <input type="text" class="input-box" id="newAccountDisplayName" placeholder="e.g. Vaibhav Rastogi">
+      </div>
 
-        <div class="modal-form-group">
-          <label class="modal-label">Work Email *</label>
-          <input type="email" class="modal-input" id="modalLeadEmail" placeholder="elena@company.com" required>
-        </div>
+      <div class="field-group" style="margin-bottom:8px;">
+        <label class="field-label">
+          <span>16-Character Google App Password</span>
+          <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style="color:var(--accent-cyan); text-decoration:none; font-size:11px;">
+            Get App Password ↗
+          </a>
+        </label>
+        <input type="password" class="input-box" id="newAccountAppPassword" placeholder="abcd efgh ijkl mnop">
+      </div>
 
-        <div class="modal-form-group">
-          <label class="modal-label">Company Name</label>
-          <input type="text" class="modal-input" id="modalLeadCompany" placeholder="e.g. Northwind Solutions">
-        </div>
+      <div style="background:rgba(255,255,255,0.04); border-radius:var(--radius-sub); padding:10px 12px; margin-bottom:16px; font-size:11.5px; color:var(--text-muted); line-height:1.4;">
+        💡 <strong>How to get an App Password:</strong> Google Account → Security → Turn on 2-Step Verification → Search "App passwords" → Name it "SheetMerge" → Copy the 16 letters.
+      </div>
 
-        <div class="modal-form-group">
-          <label class="modal-label">Phone Number</label>
-          <input type="tel" class="modal-input" id="modalLeadPhone" placeholder="+1-555-0188">
-        </div>
+      <div id="smtpVerifyMsg" style="margin-bottom:14px; font-size:12px; display:none;"></div>
 
-        <div class="modal-form-group">
-          <label class="modal-label">Estimated Value (₹)</label>
-          <input type="number" class="modal-input" id="modalLeadValue" placeholder="45000">
-        </div>
-
-        <div class="modal-form-group">
-          <label class="modal-label">Lead Source</label>
-          <select class="modal-select" id="modalLeadSource">
-            <option value="Website form">Website form</option>
-            <option value="Cold email">Cold email</option>
-            <option value="LinkedIn">LinkedIn</option>
-            <option value="Referral">Referral</option>
-            <option value="Partner">Partner</option>
-          </select>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-ghost" onclick="window.sheetmerge.closeAddLeadModal()">Cancel</button>
-          <button type="submit" class="btn-coral">Save Lead</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Command Palette (Ctrl+K / Cmd+K) -->
-  <div class="palette-backdrop" id="commandPalette" onclick="if(event.target===this) window.sheetmerge.closePalette()">
-    <div class="palette-box">
-      <input type="text" class="palette-search-input" id="paletteInput" placeholder="Search leads, accounts, or type action...">
-      <div class="palette-results" id="paletteResults">
-        <!-- Rendered dynamically -->
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="action-pill-btn" onclick="window.sheetmerge.closeAddAccountModal()">Cancel</button>
+        <button class="primary-add-btn" id="btnVerifySmtp" onclick="window.sheetmerge.verifyAndSaveAccount()">⚡ Test & Connect</button>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Live Sequential Dispatch Progress HUD Modal -->
+  <div class="dispatch-hud-overlay" id="dispatchHudOverlay">
+    <div class="dispatch-hud-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h3 style="font-size:17px; font-weight:700; color:var(--text-main);">Sequential Mail Merge In Progress</h3>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Sending via Gmail SMTP relay with randomized jitter</p>
+        </div>
+        <span class="badge-shield" id="hudPacingBadge">2.0s–5.0s Jitter</span>
+      </div>
+
+      <!-- Progress Track -->
+      <div class="hud-progress-track">
+        <div class="hud-progress-fill" id="hudProgressFill"></div>
+      </div>
+
+      <!-- Current Operation & Pacing Countdown -->
+      <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main); margin-bottom:12px;">
+        <span id="hudStatusText">Preparing merge queue...</span>
+        <strong id="hudPercentText">0%</strong>
+      </div>
+
+      <div style="background:var(--card-surface); padding:10px 14px; border-radius:var(--radius-sub); border:1px solid var(--card-border-subtle); font-size:12px;">
+        <div style="color:var(--text-muted); margin-bottom:2px;">Current Recipient:</div>
+        <div style="font-weight:700; color:var(--accent-cyan); font-family:monospace;" id="hudCurrentEmail">—</div>
+        <div style="margin-top:4px; font-size:11px; color:var(--text-muted);" id="hudJitterText">Waiting for next dispatch window...</div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="hud-stats-grid">
+        <div class="hud-stat-box">
+          <div class="val" id="hudSentCount" style="color:#10b981;">0</div>
+          <div class="lbl">Sent</div>
+        </div>
+        <div class="hud-stat-box">
+          <div class="val" id="hudBounceCount" style="color:#f43f5e;">0</div>
+          <div class="lbl">Bounced</div>
+        </div>
+        <div class="hud-stat-box">
+          <div class="val" id="hudQuotaCount" style="color:#a855f7;">42 / 50</div>
+          <div class="lbl">Quota</div>
+        </div>
+        <div class="hud-stat-box">
+          <div class="val" id="hudRemainingCount" style="color:var(--accent-cyan);">0</div>
+          <div class="lbl">Pending</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="action-pill-btn" id="btnCancelDispatch" onclick="window.sheetmerge.stopDispatch()">Stop Dispatch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette (Ctrl+K) -->
+  <div class="drawer-backdrop" id="commandPalette" onclick="if(event.target===this) window.sheetmerge.closePalette()">
+    <div style="background:var(--card-dark); border:1px solid var(--card-border); border-radius:var(--radius-tile); width:100%; max-width:540px; margin:auto; margin-top:12vh; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.8);">
+      <input type="text" id="paletteInput" class="input-box" style="border:none; border-bottom:1px solid var(--card-border-subtle); border-radius:0; padding:16px 20px; font-size:15px;" placeholder="Search recipients, sender accounts, or type a command...">
+      <div id="paletteResults" style="max-height:300px; overflow-y:auto; padding:10px 0;">
+        <!-- Results -->
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+  <script src="/static/app.js"></script>
 </body>
 </html>

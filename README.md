@@ -1,56 +1,57 @@
 # ⚡ SheetMerge Pro
-> **The High-Performance Outreach CRM & Enterprise Deliverability Engine.**  
-> Fluid Bento-Box architecture, responsive mobile bottom dock, single-column YAMM standard, and bulletproof anti-spam protection.
+> **High-Performance Mail Merge Application & Deliverability Shield.**  
+> Real Google Sheets integration, Gmail SMTP delivery, single-column YAMM standard, and sequential humanized dispatching.
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-48%2F48%20Passing-brightgreen?logo=pytest)](https://pytest.org)
+[![Tests](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen?logo=pytest)](https://pytest.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 🎨 Design Philosophy & UX Innovation
+## 🎨 Design Philosophy & Bento-Box UI
 
-SheetMerge Pro brings modern software craftsmanship to outbound sales, recruitment, and email automation. Inspired by high-end dark bento interfaces, it combines dense utility with a distraction-free aesthetic:
+SheetMerge Pro brings modern software craftsmanship to outbound email campaigns, newsletters, and personalized outreach:
 
-* **Obsidian & Almond Contrast:** Deep dark surfaces (`#0a0c10`), warm almond card tiles (`#f4f3ef`), and burnt orange/coral accents (`#ff5722`).
+* **Midnight Obsidian & Cyber Cyan:** Deep obsidian backdrop (`#080c14`), electric indigo cards (`#6366f1`), and cyber cyan accents (`#06b6d4`).
 * **Fluid Responsive Architecture:**
-  * **Desktop:** Vertical left-side rail (`width: 76px`) with quick stage switchers and user profile avatar.
-  * **Mobile / Phone:** Rail smoothly converts into a **floating bottom navigation bar**, stacking all bento cards into an intuitive single scrolling column.
-* **Interactive Pillar Chart:** Live visual distribution of deals across pipeline stages (`New`, `Contacted`, `Qualified`, `Proposal Sent`, `Won`, `Lost`).
-* **Slide-Out Lead Drawer:** Click any contact or deal to slide out an activity timeline, manage stage progression, and write notes.
-* **Spotlight Command Palette (`⌘K` / `Ctrl+K`):** Instant keyboard-first search across all leads, companies, and actions.
+  * **Desktop:** Vertical navigation rail (`width: 76px`) with quick view switchers and account profile.
+  * **Mobile / Phone:** Navigation smoothly converts into a **floating bottom dock**, stacking all bento cards into an intuitive single scrolling column.
+* **Interactive Stage Pillar Chart:** Live visual distribution of merge recipients across stages (`Queue`, `Sent`, `Opened`, `Clicked`, `Bounced`).
+* **Slide-Out Compose & Template Drawer:** Insert `{{First Name}}`, `{{Company}}`, and `{{Email}}` tags with live real-time preview and 1-click test email dispatch.
+* **Spotlight Command Palette (`⌘K` / `Ctrl+K`):** Instant keyboard-first search across all recipients, connected Gmail accounts, and campaign actions.
 
 ---
 
-## 🛡️ Enterprise Deliverability Shield
+## 🌐 Real-World Features & Built-In Tech
 
-Unlike conventional merge extensions that risk domain burn by blasting unthrottled batches, SheetMerge Pro implements enterprise-grade sender protection:
+### 1. Live Google Sheets Ingestion & Analysis
+* **Connect Public Google Sheet:** Paste any Google Sheet link (`https://docs.google.com/spreadsheets/d/.../edit`). SheetMerge Pro automatically queries the CSV export endpoint, parses rows, and hydrates the dashboard in seconds without requiring complex Google Cloud API keys.
+* **Built-in Intelligent Column Detection:** Heuristically matches columns for `Email`, `First Name`, `Last Name`, `Company`, and `Merge Status`.
+* **Private Sheet & CSV Fallback:** If a sheet is private, SheetMerge provides 1-click CSV/Excel upload and sample template loading.
+* **YAMM Compatible CSV Export:** Download your updated spreadsheet anytime with the single standardized `Merge Status` column and sent timestamps.
 
-1. **YAMM Single 'Merge Status' Column:**
-   * Consolidates all delivery, open, click, and bounce indicators into a single standardized column (`EMAIL_SENT`, `EMAIL_OPENED`, `EMAIL_CLICKED`, `EMAIL_BOUNCED`).
-   * Eliminates messy multi-column sprawl.
+### 2. Real Gmail SMTP Delivery & App Password Authentication
+* **Direct Gmail Delivery:** Sends real emails using Google's secure SMTP relay (`smtp.gmail.com:587`) with STARTTLS encryption.
+* **App Password Verification:** Instant connection testing verifies your 16-character Google App Password and confirms account status.
+* **Live Test Email:** Send a 1-click test email to your personal inbox to verify formatting and inbox placement before launching.
 
-2. **50-Send Daily Quota Protection (Valid Sends Only):**
-   * Hard bounces are excluded from your daily quota calculation.
-   * Keeps sending until you achieve **50 verified successful deliveries** per day.
+### 3. Sequential Dispatch with Humanized Pacing
+* **Randomized Jitter Delay (2.0s – 5.0s):** Mimics human sending intervals (`random.uniform(2.0, 5.0)`) between dispatches to avoid firewall connection spike detection by Google and Microsoft spam filters.
+* **Live HUD Progress Modal:** Shows real-time percentage, current recipient, jitter countdown, and live counters for sent, bounced, and remaining sends.
 
-3. **Multi-Account Rotation:**
-   * Automatically switches accounts when quota thresholds are reached (e.g. Account A sends 50, then Account B sends 50).
+### 4. 50-Send Daily Verified Quota Shield
+* **Deliveries Only:** Hard bounces are automatically excluded from your daily quota calculation.
+* **Auto-Rotation:** Automatically switches to the next connected sender account when an account reaches 50 valid sends.
 
-4. **Permanent 5xx Hard Bounce Suppression:**
-   * Catches `550`, `551`, `553`, and `554` SMTP responses and instantly logs the address to a local suppression list.
-   * Dead addresses are never contacted again, safeguarding your domain reputation.
+### 5. Automatic 5xx Hard Bounce Suppression
+* **Instant Interception:** Detects permanent SMTP `550`, `551`, `553`, and `554` responses and immediately records the recipient into a local suppression list.
+* **Domain Reputation Guard:** Suppressed recipients are skipped in future campaigns, protecting your sender score.
 
-5. **Humanized Delay & Randomized Jitter:**
-   * Randomizes inter-message delays between 2.0s and 5.0s (`random.uniform(2.0, 5.0)`) to mimic human typing and pacing, preventing automated firewall blocks by Microsoft Exchange and Google Workspace.
-
-6. **Pre-flight DNS Inspection (SPF, DKIM, DMARC):**
-   * Live DNS diagnostics verify your domain records before campaign launch.
-
-7. **45+ Rule Content Spam Analyzer:**
-   * Scans subject lines and message bodies for high-risk spam triggers, excessive capitalization, exclamation marks, and dangerous link-to-text ratios.
+### 6. Pre-Flight DNS Shield & 45-Rule Anti-Spam Analyzer
+* **Pre-Flight DNS Scan:** Real-time lookup for SPF, DKIM (2048-bit), DMARC policy alignment, and MX resolution.
+* **Heuristic Spam Engine:** Analyzes message subject and body for caps ratios, trigger keywords, and link density.
 
 ---
 
@@ -60,7 +61,7 @@ Unlike conventional merge extensions that risk domain burn by blasting unthrottl
 SheetMerge-App/
 ├── backend/
 │   ├── data/                   # SQLite database directory (auto-created)
-│   ├── tests/                  # Pytest test suite (100% pass)
+│   ├── tests/                  # Pytest test suite (56/56 passing)
 │   │   ├── test_domain_security.py
 │   │   ├── test_main_api.py
 │   │   ├── test_smtp_relay.py
@@ -72,8 +73,8 @@ SheetMerge-App/
 │   ├── smtp_relay.py           # Humanized SMTP relay with 5xx bounce guard
 │   └── spam_analyzer.py        # 45+ rule spam trigger engine
 ├── frontend/
-│   ├── app.js                  # Client state, bento renderers & Cmd+K palette
-│   ├── index.html              # Bento grid structure & slide-out drawer
+│   ├── app.js                  # Client engine, bento renderers & live dispatch HUD
+│   ├── index.html              # Bento grid structure, Google Sheet hub & modals
 │   └── styles.css              # Custom fluid Bento CSS design system
 ├── Dockerfile                  # Production container image
 ├── docker-compose.yml          # One-command orchestration
@@ -87,65 +88,43 @@ SheetMerge-App/
 
 ### Option 1: One-Click Launch (Windows)
 Double-click `run.bat` in the repository root. It will:
-1. Install requirements via `pip`.
+1. Install dependencies via `pip`.
 2. Launch the FastAPI server at `http://localhost:8000`.
 3. Open the Bento-Box UI in your default browser.
 
-### Option 2: Docker Compose (Recommended for Production)
+### Option 2: Docker Compose (Production)
 ```bash
-git clone https://github.com/vaibhav2616/SheetMerge-App.git
-cd SheetMerge-App
+git clone https://github.com/vaibhav2616/Sheet-Merge-App.git
+cd Sheet-Merge-App
 docker-compose up -d --build
 ```
 Access the application at `http://localhost:8000`.
 
-### Option 3: Manual Setup
+### Option 3: Python Virtual Environment
 ```bash
-# 1. Clone repository
-git clone https://github.com/vaibhav2616/SheetMerge-App.git
-cd SheetMerge-App
-
-# 2. Install Python dependencies
-pip install -r backend/requirements.txt
-
-# 3. Start the application
-uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+git clone https://github.com/vaibhav2616/Sheet-Merge-App.git
+cd Sheet-Merge-App/backend
+pip install -r requirements.txt
+python -m pytest tests/ -v
+uvicorn main:app --reload --port 8000
 ```
 
 ---
 
-## 🧪 Running the Automated Test Suite
+## 🧪 Automated Test Suite (56/56 Passing)
 
-SheetMerge Pro comes with comprehensive end-to-end unit and integration test coverage:
+Execute the full suite of integration and scenario tests:
 
 ```bash
-# Run the complete Pytest suite
-python -m pytest backend/tests -v
+python -m pytest backend/tests/ -v
 ```
 
-**Results:**
-* ✅ **48/48 Passing Tests** covering domain security, spam heuristics, SMTP error handling, bounce suppression, and REST APIs.
-
----
-
-## 🔌 Core API Endpoints
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/` | Serves the interactive Bento-Box UI |
-| `GET` | `/api/leads` | Lists all leads and pipeline deals |
-| `POST` | `/api/leads` | Creates a new outreach lead |
-| `PATCH` | `/api/leads/{id}` | Updates lead stage and attributes |
-| `POST` | `/api/leads/{id}/notes` | Appends a note to a lead's timeline |
-| `POST` | `/api/security/check-domain` | Evaluates SPF, DKIM, DMARC, and MX records |
-| `POST` | `/api/security/analyze-content` | Computes spam score and trigger warnings |
-| `POST` | `/api/security/clean-list` | Validates recipient list against suppression DB |
-| `POST` | `/api/relay/send` | Dispatches emails via humanized throttled relay |
-| `GET` | `/track/open/{track_id}` | 1x1 transparent tracking pixel |
-| `GET` | `/track/click/{track_id}` | Click redirect logger |
+```
+======================= 56 passed in ~34s =======================
+```
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
