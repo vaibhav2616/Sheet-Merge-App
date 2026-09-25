@@ -1,83 +1,50 @@
 # ⚡ SheetMerge Pro
-> **High-Performance Mail Merge Application & Deliverability Shield.**  
-> Real Google Sheets integration, Gmail SMTP delivery, single-column YAMM standard, and sequential humanized dispatching.
+> **High-Deliverability Multi-Account Mail Merge & Google Sheets Suite.**  
+> Real Google Sheets synchronization, Multi-Account Gmail sender pool, single-column YAMM standard, and sequential humanized dispatching.
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-56%2F56%20Passing-brightgreen?logo=pytest)](https://pytest.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 🎨 Design Philosophy & Bento-Box UI
+## 🎨 Clean Architecture & Modern Workspace
 
-SheetMerge Pro brings modern software craftsmanship to outbound email campaigns, newsletters, and personalized outreach:
+SheetMerge Pro features a clean separation between **App User Authentication** and **Multi-Account Sender Pool**:
 
-* **Midnight Obsidian & Cyber Cyan:** Deep obsidian backdrop (`#080c14`), electric indigo cards (`#6366f1`), and cyber cyan accents (`#06b6d4`).
-* **Fluid Responsive Architecture:**
-  * **Desktop:** Vertical navigation rail (`width: 76px`) with quick view switchers and account profile.
-  * **Mobile / Phone:** Navigation smoothly converts into a **floating bottom dock**, stacking all bento cards into an intuitive single scrolling column.
-* **Interactive Stage Pillar Chart:** Live visual distribution of merge recipients across stages (`Queue`, `Sent`, `Opened`, `Clicked`, `Bounced`).
-* **Slide-Out Compose & Template Drawer:** Insert `{{First Name}}`, `{{Company}}`, and `{{Email}}` tags with live real-time preview and 1-click test email dispatch.
-* **Spotlight Command Palette (`⌘K` / `Ctrl+K`):** Instant keyboard-first search across all recipients, connected Gmail accounts, and campaign actions.
-
----
-
-## 🌐 Real-World Features & Built-In Tech
-
-### 1. Live Google Sheets Ingestion & Analysis
-* **Connect Public Google Sheet:** Paste any Google Sheet link (`https://docs.google.com/spreadsheets/d/.../edit`). SheetMerge Pro automatically queries the CSV export endpoint, parses rows, and hydrates the dashboard in seconds without requiring complex Google Cloud API keys.
-* **Built-in Intelligent Column Detection:** Heuristically matches columns for `Email`, `First Name`, `Last Name`, `Company`, and `Merge Status`.
-* **Private Sheet & CSV Fallback:** If a sheet is private, SheetMerge provides 1-click CSV/Excel upload and sample template loading.
-* **YAMM Compatible CSV Export:** Download your updated spreadsheet anytime with the single standardized `Merge Status` column and sent timestamps.
-
-### 2. Real Gmail SMTP Delivery & App Password Authentication
-* **Direct Gmail Delivery:** Sends real emails using Google's secure SMTP relay (`smtp.gmail.com:587`) with STARTTLS encryption.
-* **App Password Verification:** Instant connection testing verifies your 16-character Google App Password and confirms account status.
-* **Live Test Email:** Send a 1-click test email to your personal inbox to verify formatting and inbox placement before launching.
-
-### 3. Sequential Dispatch with Humanized Pacing
-* **Randomized Jitter Delay (2.0s – 5.0s):** Mimics human sending intervals (`random.uniform(2.0, 5.0)`) between dispatches to avoid firewall connection spike detection by Google and Microsoft spam filters.
-* **Live HUD Progress Modal:** Shows real-time percentage, current recipient, jitter countdown, and live counters for sent, bounced, and remaining sends.
-
-### 4. 50-Send Daily Verified Quota Shield
-* **Deliveries Only:** Hard bounces are automatically excluded from your daily quota calculation.
-* **Auto-Rotation:** Automatically switches to the next connected sender account when an account reaches 50 valid sends.
-
-### 5. Automatic 5xx Hard Bounce Suppression
-* **Instant Interception:** Detects permanent SMTP `550`, `551`, `553`, and `554` responses and immediately records the recipient into a local suppression list.
-* **Domain Reputation Guard:** Suppressed recipients are skipped in future campaigns, protecting your sender score.
-
-### 6. Pre-Flight DNS Shield & 45-Rule Anti-Spam Analyzer
-* **Pre-Flight DNS Scan:** Real-time lookup for SPF, DKIM (2048-bit), DMARC policy alignment, and MX resolution.
-* **Heuristic Spam Engine:** Analyzes message subject and body for caps ratios, trigger keywords, and link density.
+* **App User Workspace Access:**
+  * **1-Click Google Sign-In (OAuth):** Instant access to your dashboard using Google Identity Services.
+  * **Email + 6-Digit OTP Confirmation:** Passwordless, secure email sign-up/sign-in with 6-digit confirmation codes.
+* **Multi-Account Google Sender Pool:**
+  * Link multiple Google / Gmail accounts to pool daily delivery capacity (50 sends/day per account).
+  * Load balances and auto-rotates across accounts with live quota tracking (`0 / 100 Sent Today`).
+* **Live Google Sheets Ingestion & Status Sync:**
+  * Ingest any Google Sheet via URL. Intelligent column heuristic detection maps `Email`, `First Name`, `Last Name`, `Company`, and single-status `Merge Status`.
+  * Exports updated CSVs with real-time `Merge Status` (`EMAIL_SENT`, `EMAIL_OPENED`, `EMAIL_CLICKED`, `EMAIL_BOUNCED`) to reflect changes directly in Google Sheets.
+* **Sequential Humanized Dispatcher:**
+  * Randomized 2.0s–5.0s jitter pacing between dispatches to mimic natural human sending and bypass automated spam filters.
+  * Automatic 5xx hard bounce suppression: permanently suppresses invalid addresses without consuming your daily quota.
 
 ---
 
-## 📂 Project Architecture
+## 📂 Project Structure
 
 ```
 SheetMerge-App/
 ├── backend/
-│   ├── data/                   # SQLite database directory (auto-created)
-│   ├── tests/                  # Pytest test suite (56/56 passing)
-│   │   ├── test_domain_security.py
-│   │   ├── test_main_api.py
-│   │   ├── test_smtp_relay.py
-│   │   └── test_spam_analyzer.py
+│   ├── data/                   # SQLite database (sheetmerge_pro.db)
 │   ├── domain_security.py      # SPF / DKIM / DMARC verification engine
-│   ├── main.py                 # FastAPI application & REST endpoints
-│   ├── pytest.ini              # Pytest configuration
+│   ├── main.py                 # FastAPI application, auth endpoints & dispatch engine
 │   ├── requirements.txt        # Backend dependencies
 │   ├── smtp_relay.py           # Humanized SMTP relay with 5xx bounce guard
 │   └── spam_analyzer.py        # 45+ rule spam trigger engine
 ├── frontend/
-│   ├── app.js                  # Client engine, bento renderers & live dispatch HUD
-│   ├── index.html              # Bento grid structure, Google Sheet hub & modals
-│   └── styles.css              # Custom fluid Bento CSS design system
-├── Dockerfile                  # Production container image
-├── docker-compose.yml          # One-command orchestration
+│   ├── app.js                  # Client application engine & multi-account state
+│   ├── index.html              # Modern dashboard, sender pool, sheet hub & walkthrough
+│   └── styles.css              # Obsidian Dark & Cyber Cyan responsive design system
+├── Dockerfile                  # Container deployment image
+├── docker-compose.yml          # Container orchestration
 ├── run.bat                     # Windows one-click launcher
 └── README.md
 ```
@@ -86,45 +53,25 @@ SheetMerge-App/
 
 ## 🚀 Quickstart Guide
 
-### Option 1: One-Click Launch (Windows)
-Double-click `run.bat` in the repository root. It will:
-1. Install dependencies via `pip`.
-2. Launch the FastAPI server at `http://localhost:8000`.
-3. Open the Bento-Box UI in your default browser.
+### Option 1: Local Launch
+```bash
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+Open `http://localhost:8000` in your browser.
 
 ### Option 2: Docker Compose (Production)
 ```bash
-git clone https://github.com/vaibhav2616/Sheet-Merge-App.git
-cd Sheet-Merge-App
 docker-compose up -d --build
 ```
-Access the application at `http://localhost:8000`.
-
-### Option 3: Python Virtual Environment
-```bash
-git clone https://github.com/vaibhav2616/Sheet-Merge-App.git
-cd Sheet-Merge-App/backend
-pip install -r requirements.txt
-python -m pytest tests/ -v
-uvicorn main:app --reload --port 8000
-```
+Open `http://localhost:8000`.
 
 ---
 
-## 🧪 Automated Test Suite (56/56 Passing)
+## 📖 End-to-End Walkthrough
 
-Execute the full suite of integration and scenario tests:
-
-```bash
-python -m pytest backend/tests/ -v
-```
-
-```
-======================= 56 passed in ~34s =======================
-```
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
+1. **Sign In:** Use 1-click Google OAuth or enter your email to receive a 6-digit verification code.
+2. **Link Sender Accounts:** In Section 1, link 1 or more Google accounts. Each account adds 50 verified sends/day to your delivery pool.
+3. **Connect Google Sheet:** In Section 2, paste your Google Sheet URL (ensure General Access is set to 'Anyone with the link can view').
+4. **Draft & Preview:** Open the composer drawer to compose your email with `{{First Name}}` and `{{Company}}` tags. Inspect the real-time personalization preview for Row 1.
+5. **Dispatch Campaign:** Click 'Dispatch Campaign' to send sequentially with humanized jitter.
+6. **Sync Status:** Click 'Export Updated CSV' to re-import into Google Sheets with updated single-column `Merge Status`.

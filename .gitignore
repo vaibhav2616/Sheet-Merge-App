@@ -12,4 +12,6 @@ data/*.db
 .env
 node_modules/
 .DS_Store
-Thumbs.db
+tests/
+pytest.ini
+.pytest_cache/

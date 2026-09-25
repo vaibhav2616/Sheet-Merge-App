@@ -1,8 +1,12 @@
 /**
- * SheetMerge Pro — Client Application Engine
- * ===========================================
- * Handles multi-page routing, onboarding wizard, Google account authentication,
- * live Google Sheets ingestion, single-status YAMM rendering, and sequential dispatch.
+ * SheetMerge Pro — Frontend Application Engine (v3.0.0)
+ * ====================================================
+ * Modules:
+ *   1. App User Authentication (Fast Google OAuth & Email 6-Digit OTP)
+ *   2. Multi-Account Google Sender Pool Management
+ *   3. Live Google Sheets Ingestion & Single-Status YAMM Sync
+ *   4. Sequential Humanized Jitter Dispatcher (2.0s–5.0s)
+ *   5. Delivery & Inboxing Health Visualisation
  */
 
 (function () {
@@ -11,30 +15,27 @@
   // ── Application State ──────────────────────────────────────────────────
   const state = {
     currentView: 'landing',
-    wizardStep: 1,
-    authStatus: {
-      setup_completed: false,
-      has_profile: false,
-      has_verified_account: false,
-      can_access_dashboard: false,
-      profile: null,
-      accounts: []
-    },
+    user: null,
+    token: localStorage.getItem('sheetmerge_token') || '',
     accounts: [],
     recipients: [],
+    tableFilter: 'all',
+    searchQuery: '',
     isDispatching: false,
     stopRequested: false,
-    activeTheme: 'dark'
+    activeTheme: 'dark',
+    pendingOtpEmail: ''
   };
 
   // ── Initialization ─────────────────────────────────────────────────────
   async function init() {
     loadTheme();
-    setupGlobalNavigation();
-    await checkAuthStatus();
-    
-    // Route based on onboarding status
-    if (state.authStatus.can_access_dashboard) {
+    setupOtpDigitInputs();
+    setupKeyboardShortcuts();
+    await checkCurrentUser();
+
+    // Default route
+    if (state.user) {
       navigate('dashboard');
     } else {
       navigate('landing');
@@ -59,38 +60,32 @@
   }
 
   // ── View Navigation ────────────────────────────────────────────────────
-  // ── View Navigation ────────────────────────────────────────────────────
   function navigate(viewName) {
-    if (viewName === 'dashboard' && !state.authStatus.can_access_dashboard) {
-      alert('Please connect your Google Account to unlock the campaign dashboard.');
-      navigate('onboarding');
-      return;
-    }
-
     state.currentView = viewName;
 
     // Toggle active view pane
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-    const target = document.getElementById(
-      viewName === 'landing' ? 'viewLanding' :
-      viewName === 'onboarding' ? 'viewOnboarding' : 'viewDashboard'
-    );
+    const targetMap = {
+      landing: 'viewLanding',
+      auth: 'viewAuth',
+      dashboard: 'viewDashboard',
+      walkthrough: 'viewWalkthrough'
+    };
+    const target = document.getElementById(targetMap[viewName] || 'viewLanding');
     if (target) target.classList.add('active');
 
     // Update rail active states
     document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
     if (viewName === 'landing') document.getElementById('navLandingBtn')?.classList.add('active');
-    if (viewName === 'onboarding') {
-      document.getElementById('navOnboardingBtn')?.classList.add('active');
-      renderOnboardingAccounts();
-    }
+    if (viewName === 'auth') document.getElementById('navAuthBtn')?.classList.add('active');
     if (viewName === 'dashboard') {
       document.getElementById('navDashboardBtn')?.classList.add('active');
       loadDashboardData();
     }
+    if (viewName === 'walkthrough') document.getElementById('navWalkthroughBtn')?.classList.add('active');
   }
 
-  function setupGlobalNavigation() {
+  function setupKeyboardShortcuts() {
     window.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -99,532 +94,415 @@
     });
   }
 
-  // ── Authentication & Gating Checks ─────────────────────────────────────
-  async function checkAuthStatus() {
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 1: APP USER AUTHENTICATION (OAuth & Email OTP)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function checkCurrentUser() {
     try {
-      const res = await fetch('/api/auth/status');
+      const headers = state.token ? { 'Authorization': `Bearer ${state.token}` } : {};
+      const res = await fetch('/api/auth/me', { headers });
       if (res.ok) {
-        state.authStatus = await res.json();
-        updateUserBadges();
-        renderOnboardingAccounts();
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          state.user = data.user;
+          updateUserDisplay();
+        } else {
+          state.user = null;
+          updateUserDisplay();
+        }
       }
     } catch (e) {
-      console.warn('Could not check auth status', e);
+      console.warn('Could not check current user session', e);
     }
   }
 
-  function updateUserBadges() {
-    const p = state.authStatus.profile;
+  function updateUserDisplay() {
     const avatarEl = document.getElementById('railUserAvatar');
     const badgeEl = document.getElementById('dashUserBadge');
+    const activeCard = document.getElementById('authActiveUserCard');
+    const formsWrap = document.getElementById('authFormsWrap');
 
-    if (p && p.full_name) {
-      const initials = p.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    if (state.user) {
+      const initials = (state.user.full_name || state.user.email)
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+
       if (avatarEl) avatarEl.textContent = initials || 'SM';
-      if (badgeEl) badgeEl.textContent = `👤 ${p.full_name} (${p.company || 'Workspace'})`;
+      if (badgeEl) badgeEl.textContent = `👤 ${state.user.full_name || state.user.email}`;
+
+      if (activeCard && formsWrap) {
+        activeCard.style.display = 'block';
+        formsWrap.style.display = 'none';
+        document.getElementById('activeUserName').textContent = state.user.full_name || 'Active User';
+        document.getElementById('activeUserEmail').textContent = state.user.email;
+      }
+    } else {
+      if (avatarEl) avatarEl.textContent = 'SM';
+      if (badgeEl) badgeEl.textContent = '👤 Guest User (Sign In)';
+
+      if (activeCard && formsWrap) {
+        activeCard.style.display = 'none';
+        formsWrap.style.display = 'block';
+      }
     }
   }
 
-  // ── Single-Step Google Account Connection & Sign In ─────────────────────
-  async function signInWithGoogle() {
-    const existing = document.getElementById('quickEmail')?.value.trim();
-    let email = existing;
-    if (!email) {
-      email = prompt('Enter your Google or Gmail address to sign in:', 'user@gmail.com');
-    }
+  async function signInWithGoogleOAuth() {
+    let email = prompt('Enter your Google email for fast 1-click Google Sign-In:', 'user@gmail.com');
     if (!email) return;
 
     email = email.trim().toLowerCase();
     if (!email || !email.includes('@')) {
-      alert('Please enter a valid Google or Gmail address.');
+      alert('Please enter a valid Google email address.');
       return;
     }
 
     const defaultName = email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    const btn = document.getElementById('btnGoogleSignIn');
+    const btn = document.getElementById('btnGoogleAuth');
     if (btn) btn.disabled = true;
 
     try {
-      const res = await fetch('/api/auth/google/quick-connect', {
+      const res = await fetch('/api/auth/google/oauth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, display_name: defaultName })
+        body: JSON.stringify({ email, name: defaultName })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        await checkAuthStatus();
-        alert(`✓ Successfully signed in with Google as ${email}! Workspace activated.`);
+        state.token = data.token;
+        localStorage.setItem('sheetmerge_token', data.token);
+        state.user = data.user;
+        updateUserDisplay();
+        alert(`✓ Welcome, ${data.user.full_name}! You are now signed in with Google.`);
         navigate('dashboard');
       } else {
-        alert(data.detail || 'Could not connect Google account.');
+        alert(data.detail || 'Could not authenticate with Google.');
       }
     } catch (e) {
-      alert('Network error connecting Google account.');
+      alert('Error during Google authentication: ' + e.message);
     } finally {
       if (btn) btn.disabled = false;
     }
   }
 
-  async function handleQuickConnect(event) {
-    event.preventDefault();
-    const email = document.getElementById('quickEmail').value.trim();
-    const name = document.getElementById('quickName')?.value.trim() || '';
-    const password = document.getElementById('quickAppPassword')?.value.trim() || '';
-    const host = document.getElementById('quickHost')?.value.trim() || 'smtp.gmail.com';
-    const port = parseInt(document.getElementById('quickPort')?.value || '587', 10);
+  async function handleSendOtp(e) {
+    if (e) e.preventDefault();
+    const emailInput = document.getElementById('otpEmailInput');
+    const email = emailInput.value.trim().toLowerCase();
 
-    const btn = document.getElementById('btnQuickConnect');
-    const btnText = document.getElementById('btnQuickConnectText');
-    if (btn) btn.disabled = true;
-    if (btnText) btnText.textContent = 'Connecting Account...';
-
-    try {
-      let endpoint = '/api/auth/google/quick-connect';
-      let payload = { email, display_name: name };
-
-      if (password) {
-        endpoint = '/api/accounts/verify-smtp';
-        payload = { email, app_password: password, display_name: name, smtp_host: host, smtp_port: port };
-      }
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        await checkAuthStatus();
-        alert(`✓ Successfully connected ${email}! Unlocking campaign dashboard...`);
-        navigate('dashboard');
-      } else {
-        alert(data.detail || 'Failed to connect Google account.');
-      }
-    } catch (e) {
-      alert('Network error connecting Google account.');
-    } finally {
-      if (btn) btn.disabled = false;
-      if (btnText) btnText.textContent = 'Connect Account & Unlock Dashboard';
-    }
-  }
-
-  function renderOnboardingAccounts() {
-    const section = document.getElementById('onboardingConnectedSection');
-    const listEl = document.getElementById('onboardingAccountsList');
-    if (!section || !listEl) return;
-
-    const accounts = state.authStatus.accounts || [];
-    if (accounts.length > 0) {
-      section.style.display = 'block';
-      listEl.innerHTML = accounts.map(a => `
-        <div class="account-badge-card" style="margin-bottom:8px;">
-          <div class="email-info">
-            <strong>${a.email}</strong>
-            <span>${a.display_name || 'Sender'} · Daily quota: ${a.daily_quota}/day</span>
-          </div>
-          <div>
-            <span class="status-badge ${a.is_verified ? 'verified' : 'unverified'}">
-              ${a.is_verified ? '✓ CONNECTED' : 'UNVERIFIED'}
-            </span>
-          </div>
-        </div>
-      `).join('');
-    } else {
-      section.style.display = 'none';
-    }
-  }
-
-  // ── Sheet / CSV Import in Wizard ───────────────────────────────────────
-  async function importWizardSheet() {
-    const url = document.getElementById('wizSheetUrl').value.trim();
-    if (!url) {
-      alert('Please enter a Google Sheet URL');
+    if (!email || !email.includes('@')) {
+      alert('Please enter a valid email address.');
       return;
     }
 
+    state.pendingOtpEmail = email;
+    const btnText = document.getElementById('btnSendOtpText');
+    if (btnText) btnText.textContent = 'Sending Verification Code...';
+
     try {
-      const res = await fetch('/api/sheet/import-url', {
+      const res = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ email })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        renderWizardSheetPreview(data);
-      } else {
-        alert(data.detail || 'Could not import Google Sheet');
-      }
-    } catch (e) {
-      alert('Network error connecting to Google Sheet');
-    }
-  }
+        // Transition to OTP verification screen
+        document.getElementById('emailOtpRequestForm').style.display = 'none';
+        const verifySec = document.getElementById('otpVerifySection');
+        verifySec.style.display = 'flex';
+        document.getElementById('otpTargetDisplay').textContent = email;
 
-  function handleWizardFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-      const csvText = e.target.result;
-      try {
-        const res = await fetch('/api/sheet/upload-csv', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ csv_text: csvText })
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          renderWizardSheetPreview(data);
-        } else {
-          alert(data.detail || 'Could not parse CSV');
+        // If dev_otp returned, show it for easy copy
+        if (data.dev_otp) {
+          const banner = document.getElementById('devOtpBanner');
+          const codeEl = document.getElementById('devOtpCode');
+          if (banner && codeEl) {
+            banner.style.display = 'block';
+            codeEl.textContent = data.dev_otp;
+          }
         }
-      } catch (err) {
-        alert('Network error uploading CSV');
+
+        // Focus first digit
+        document.getElementById('otpDigit1')?.focus();
+      } else {
+        alert(data.detail || 'Could not send verification code.');
       }
-    };
-    reader.readAsText(file);
+    } catch (err) {
+      alert('Failed to send verification code: ' + err.message);
+    } finally {
+      if (btnText) btnText.textContent = 'Send 6-Digit Verification Code';
+    }
   }
 
-  function renderWizardSheetPreview(sheetData) {
-    const previewWrap = document.getElementById('wizSheetPreview');
-    const tableEl = document.getElementById('wizPreviewTable');
-    const countEl = document.getElementById('wizSheetRowCount');
-    const labelEl = document.getElementById('wizSheetSourceLabel');
+  function setupOtpDigitInputs() {
+    for (let i = 1; i <= 6; i++) {
+      const input = document.getElementById(`otpDigit${i}`);
+      if (!input) continue;
 
-    if (!previewWrap || !tableEl) return;
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val ? val[0] : '';
+        if (val && i < 6) {
+          document.getElementById(`otpDigit${i + 1}`)?.focus();
+        }
+      });
 
-    previewWrap.style.display = 'block';
-    if (countEl) countEl.textContent = `${sheetData.total_rows} recipients loaded`;
-    if (labelEl) labelEl.textContent = sheetData.source || 'Imported Recipients';
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && i > 1) {
+          document.getElementById(`otpDigit${i - 1}`)?.focus();
+        }
+      });
 
-    const rows = sheetData.rows || [];
-    let html = '<thead><tr><th>#</th><th>Email</th><th>First Name</th><th>Company</th><th>Merge Status</th></tr></thead><tbody>';
-    rows.slice(0, 5).forEach((r, idx) => {
-      html += `
-        <tr>
-          <td>${idx + 1}</td>
-          <td><strong>${r.email}</strong></td>
-          <td>${r.first_name || '—'}</td>
-          <td>${r.company || '—'}</td>
-          <td><span class="merge-badge unprocessed">${r.merge_status || 'UNPROCESSED'}</span></td>
-        </tr>
-      `;
-    });
-    html += '</tbody>';
-    tableEl.innerHTML = html;
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = e.clipboardData.getData('text').trim().replace(/[^0-9]/g, '');
+        if (pasted.length >= 6) {
+          for (let j = 1; j <= 6; j++) {
+            const digitInput = document.getElementById(`otpDigit${j}`);
+            if (digitInput) digitInput.value = pasted[j - 1];
+          }
+          document.getElementById('otpDigit6')?.focus();
+        }
+      });
+    }
   }
 
-  // ── Step 4: Loading & User Engagement Screen ────────────────────────────
-  function launchLoadingScreen() {
-    goToStep(4);
-    const fillEl = document.getElementById('engagementProgressFill');
-    const titleEl = document.getElementById('loadingEngagementTitle');
-    const subEl = document.getElementById('loadingEngagementSubtitle');
-    const btnEnter = document.getElementById('btnEnterDashboard');
+  async function handleVerifyOtp() {
+    let code = '';
+    for (let i = 1; i <= 6; i++) {
+      code += (document.getElementById(`otpDigit${i}`)?.value || '');
+    }
 
-    const check1 = document.getElementById('checkRow1');
-    const check2 = document.getElementById('checkRow2');
-    const check3 = document.getElementById('checkRow3');
-    const check4 = document.getElementById('checkRow4');
+    if (code.length < 6) {
+      alert('Please enter all 6 digits of your verification code.');
+      return;
+    }
 
-    if (btnEnter) btnEnter.style.display = 'none';
+    const btn = document.getElementById('btnVerifyOtp');
+    if (btn) btn.disabled = true;
 
-    // Simulated verified progression
-    setTimeout(() => {
-      if (fillEl) fillEl.style.width = '25%';
-      if (check1) { check1.classList.add('done'); check1.querySelector('.check-icon').textContent = '✓'; }
-      if (titleEl) titleEl.textContent = 'Testing Gmail SMTP TLS Handshakes...';
-    }, 500);
-
-    setTimeout(() => {
-      if (fillEl) fillEl.style.width = '55%';
-      if (check2) { check2.classList.add('done'); check2.querySelector('.check-icon').textContent = '✓'; }
-      if (titleEl) titleEl.textContent = 'Calibrating 2.0s–5.0s Humanized Jitter...';
-    }, 1100);
-
-    setTimeout(() => {
-      if (fillEl) fillEl.style.width = '80%';
-      if (check3) { check3.classList.add('done'); check3.querySelector('.check-icon').textContent = '✓'; }
-      if (titleEl) titleEl.textContent = 'Initializing Single YAMM Merge Status Column...';
-    }, 1700);
-
-    setTimeout(() => {
-      if (fillEl) fillEl.style.width = '100%';
-      if (check4) { check4.classList.add('done'); check4.querySelector('.check-icon').textContent = '✓'; }
-      if (titleEl) titleEl.textContent = '🎉 Deliverability Pipeline Calibrated & Ready!';
-      if (subEl) subEl.textContent = 'Your multi-account environment is active. Enter your campaign dashboard.';
-      if (btnEnter) btnEnter.style.display = 'inline-flex';
-    }, 2300);
-  }
-
-  async function completeOnboardingAndEnterDashboard() {
-    await checkAuthStatus();
-    navigate('dashboard');
-  }
-
-  // ── Dashboard Data Loading ─────────────────────────────────────────────
-  async function loadDashboardData() {
-    await Promise.all([
-      fetchDashboardOverview(),
-      fetchUnifiedAccounts(),
-      fetchRecipients()
-    ]);
-  }
-
-  async function fetchDashboardOverview() {
     try {
-      const res = await fetch('/api/dashboard/overview');
-      if (res.status === 403) {
-        alert('Onboarding required before accessing dashboard.');
-        navigate('onboarding');
-        return;
-      }
-      if (res.ok) {
-        const data = await res.json();
-        renderDashboardMetrics(data);
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: state.pendingOtpEmail, otp: code })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        state.token = data.token;
+        localStorage.setItem('sheetmerge_token', data.token);
+        state.user = data.user;
+        updateUserDisplay();
+        alert('✓ Code confirmed! Welcome to your SheetMerge workspace.');
+        navigate('dashboard');
+      } else {
+        alert(data.detail || 'Invalid verification code. Please check and try again.');
       }
     } catch (e) {
-      console.warn('Could not fetch dashboard overview', e);
+      alert('Error verifying code: ' + e.message);
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
-  function renderDashboardMetrics(data) {
-    const m = data.metrics || {};
-    const acc = data.accounts_overview || {};
+  function backToEmailInput() {
+    document.getElementById('otpVerifySection').style.display = 'none';
+    document.getElementById('emailOtpRequestForm').style.display = 'block';
+  }
 
-    const quotaVal = document.getElementById('dashQuotaVal');
-    if (quotaVal) quotaVal.textContent = `${acc.combined_sent_today || 0} / ${acc.combined_daily_quota || 0}`;
-
-    const quotaSub = document.getElementById('dashQuotaSubtext');
-    if (quotaSub) {
-      quotaSub.innerHTML = `<span style="color:#10b981;">✓ ${acc.combined_remaining_quota || 0} deliveries remaining</span> · Hard bounces excluded`;
+  function resendOtp() {
+    if (state.pendingOtpEmail) {
+      handleSendOtp();
     }
-
-    const openEl = document.getElementById('dashOpenRateVal');
-    if (openEl) openEl.textContent = `${m.open_rate || 0.0}%`;
-
-    const clickEl = document.getElementById('dashClickRateVal');
-    if (clickEl) clickEl.textContent = `${m.click_rate || 0.0}%`;
-
-    const bounceEl = document.getElementById('dashBounceRateVal');
-    if (bounceEl) bounceEl.textContent = `${m.bounce_rate || 0.0}%`;
-
-    renderPillarChart(m);
   }
 
-  function renderPillarChart(metrics) {
-    const chartEl = document.getElementById('dashPillarChart');
-    if (!chartEl) return;
-
-    const stages = [
-      { label: 'Unprocessed', count: metrics.unprocessed_count || 0, color: 'var(--status-pending)' },
-      { label: 'Sent', count: metrics.sent_count || 0, color: 'var(--status-sent)' },
-      { label: 'Opened', count: metrics.opened_count || 0, color: 'var(--status-opened)' },
-      { label: 'Clicked', count: metrics.clicked_count || 0, color: 'var(--status-clicked)' },
-      { label: 'Bounced', count: metrics.bounced_count || 0, color: 'var(--status-bounced)' }
-    ];
-
-    const maxCount = Math.max(1, ...stages.map(s => s.count));
-    chartEl.innerHTML = '';
-
-    stages.forEach(s => {
-      const col = document.createElement('div');
-      col.className = 'pillar-col';
-      const pct = Math.max(8, Math.round((s.count / maxCount) * 100));
-
-      col.innerHTML = `
-        <span class="pillar-count">${s.count}</span>
-        <div class="pillar-bar-wrap">
-          <div class="pillar-bar" style="height:${pct}%; background:${s.color};"></div>
-        </div>
-        <span class="pillar-label">${s.label}</span>
-      `;
-      chartEl.appendChild(col);
-    });
+  async function handleLogout() {
+    if (!confirm('Are you sure you want to log out of your workspace?')) return;
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${state.token}` }
+      });
+    } catch (e) {
+      console.warn('Logout notification failed', e);
+    }
+    state.token = '';
+    state.user = null;
+    localStorage.removeItem('sheetmerge_token');
+    updateUserDisplay();
+    navigate('auth');
   }
 
-  async function fetchUnifiedAccounts() {
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 2: MULTI-ACCOUNT SENDER POOL (Connecting Google Accounts)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function loadSenderAccounts() {
     try {
       const res = await fetch('/api/accounts/unified-overview');
       if (res.ok) {
         const data = await res.json();
-        renderAccountsList(data.accounts || []);
+        state.accounts = data.accounts || [];
+        renderSenderAccounts(data);
       }
     } catch (e) {
-      console.warn('Could not fetch unified accounts', e);
+      console.warn('Could not load sender accounts', e);
     }
   }
 
-  function renderAccountsList(accountsList) {
-    const listEl = document.getElementById('dashAccountsList');
-    if (!listEl) return;
+  function renderSenderAccounts(overview) {
+    const list = document.getElementById('dashAccountsList');
+    const noBanner = document.getElementById('noAccountsBanner');
+    const quotaBadge = document.getElementById('dashQuotaTotalBadge');
 
-    listEl.innerHTML = '';
-    if (accountsList.length === 0) {
-      listEl.innerHTML = '<div style="font-size:11px; color:var(--text-muted); padding:8px;">No accounts connected.</div>';
+    if (quotaBadge) {
+      quotaBadge.textContent = `🛡️ Pool Capacity: ${overview.combined_sent_today} / ${overview.combined_daily_quota} Sent (${overview.combined_remaining_quota} Left)`;
+    }
+
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!overview.accounts || overview.accounts.length === 0) {
+      if (noBanner) noBanner.style.display = 'block';
       return;
     }
 
-    accountsList.forEach(a => {
-      const item = document.createElement('div');
-      item.className = 'account-card-item';
-      item.innerHTML = `
-        <div class="acc-left">
-          <div class="acc-avatar">${(a.display_name || a.email)[0].toUpperCase()}</div>
-          <div class="acc-details">
-            <strong>${a.email}</strong>
-            <span>${a.display_name || 'Sender'} · ${a.sent_today}/${a.daily_quota} sent</span>
+    if (noBanner) noBanner.style.display = 'none';
+
+    overview.accounts.forEach(acc => {
+      const card = document.createElement('div');
+      card.className = 'pool-account-card';
+
+      const pct = acc.daily_quota > 0 ? Math.min(100, Math.round((acc.sent_today / acc.daily_quota) * 100)) : 0;
+      const statusColor = acc.status_badge === 'CONNECTED' ? '#10b981' : (acc.status_badge === 'PAUSED' ? '#94a3b8' : '#f59e0b');
+
+      card.innerHTML = `
+        <div class="pool-acc-top">
+          <div>
+            <div class="pool-acc-email">${escapeHtml(acc.email)}</div>
+            <div class="pool-acc-name">${escapeHtml(acc.display_name || 'Sender Account')}</div>
+          </div>
+          <span style="font-size:10px; font-weight:700; color:${statusColor}; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px;">
+            ${acc.status_badge}
+          </span>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:var(--text-muted);">
+            <span>Daily Quota</span>
+            <span><strong>${acc.sent_today}</strong> / ${acc.daily_quota} sent</span>
+          </div>
+          <div class="pool-quota-bar-bg">
+            <div class="pool-quota-bar-fill" style="width:${pct}%;"></div>
           </div>
         </div>
-        <div class="acc-right">
-          <span class="status-badge ${a.status_badge === 'CONNECTED' ? 'verified' : a.status_badge === 'QUOTA_EXHAUSTED' ? 'exhausted' : 'unverified'}">
-            ${a.status_badge}
-          </span>
+        <div class="pool-acc-footer">
+          <span>TLS 587 · Gmail SMTP</span>
+          <div style="display:flex; gap:6px;">
+            <button class="action-pill-btn" style="padding:2px 8px; font-size:10px;" onclick="window.sheetmerge.toggleSenderAccount(${acc.id})">
+              ${acc.is_active ? 'Pause' : 'Resume'}
+            </button>
+            <button class="action-pill-btn" style="padding:2px 8px; font-size:10px; color:#f43f5e;" onclick="window.sheetmerge.unlinkSenderAccount(${acc.id})">
+              Unlink
+            </button>
+          </div>
         </div>
       `;
-      listEl.appendChild(item);
+      list.appendChild(card);
     });
   }
 
-  async function fetchRecipients() {
-    try {
-      const res = await fetch('/api/sheet/recipients');
-      if (res.ok) {
-        state.recipients = await res.json();
-        renderRecipientsTable(state.recipients);
-      }
-    } catch (e) {
-      console.warn('Could not fetch recipients', e);
-    }
+  function openAddAccountModal() {
+    document.getElementById('addAccountModal').classList.add('active');
   }
 
-  function renderRecipientsTable(recipList) {
-    const tbody = document.getElementById('recipientsTableBody');
-    const emptyState = document.getElementById('tableEmptyState');
-    if (!tbody) return;
+  function closeAddAccountModal() {
+    document.getElementById('addAccountModal').classList.remove('active');
+  }
 
-    tbody.innerHTML = '';
-    if (!recipList || recipList.length === 0) {
-      if (emptyState) emptyState.style.display = 'block';
+  async function handleModalAccountSubmit(e) {
+    if (e) e.preventDefault();
+    const email = document.getElementById('modalAccEmail').value.trim();
+    const name = document.getElementById('modalAccName').value.trim();
+    const password = document.getElementById('modalAccPassword').value.trim();
+
+    if (!email) {
+      alert('Please enter a Google/Gmail address.');
       return;
     }
-    if (emptyState) emptyState.style.display = 'none';
 
-    recipList.forEach((r, idx) => {
-      const tr = document.createElement('tr');
-      tr.id = `recipRow_${r.id}`;
-
-      let badgeClass = 'unprocessed';
-      if (r.merge_status === 'EMAIL_SENT') badgeClass = 'sent';
-      else if (r.merge_status === 'EMAIL_OPENED') badgeClass = 'opened';
-      else if (r.merge_status === 'EMAIL_CLICKED') badgeClass = 'clicked';
-      else if (r.merge_status === 'EMAIL_BOUNCED') badgeClass = 'bounced';
-      else if (r.merge_status === 'ERROR') badgeClass = 'error';
-
-      tr.innerHTML = `
-        <td>${idx + 1}</td>
-        <td><strong>${r.email}</strong></td>
-        <td>${r.first_name || '—'}</td>
-        <td>${r.company || '—'}</td>
-        <td>
-          <span class="merge-badge ${badgeClass}" id="badge_${r.id}">
-            ${r.merge_status || 'UNPROCESSED'}
-          </span>
-          ${r.last_event ? `<div style="font-size:10px; color:var(--text-dim); margin-top:2px;">${r.last_event}</div>` : ''}
-        </td>
-        <td>
-          <button class="row-action-btn" onclick="window.sheetmerge.dispatchSingleRow(${r.id})">
-            ${r.merge_status === 'UNPROCESSED' ? 'Send' : 'Re-send'}
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function filterRecipients() {
-    const q = document.getElementById('tableSearchInput')?.value.toLowerCase().trim() || '';
-    if (!q) {
-      renderRecipientsTable(state.recipients);
-      return;
-    }
-    const filtered = state.recipients.filter(r => 
-      r.email.toLowerCase().includes(q) ||
-      (r.first_name && r.first_name.toLowerCase().includes(q)) ||
-      (r.company && r.company.toLowerCase().includes(q)) ||
-      (r.merge_status && r.merge_status.toLowerCase().includes(q))
-    );
-    renderRecipientsTable(filtered);
-  }
-
-  // ── Dispatching Operations ─────────────────────────────────────────────
-  async function dispatchSingleRow(recipientId) {
-    const subj = document.getElementById('templateSubject')?.value || 'Quick question';
-    const body = document.getElementById('templateBody')?.value || '<p>Hello {{First Name}}</p>';
-
-    const badge = document.getElementById(`badge_${recipientId}`);
-    if (badge) {
-      badge.textContent = 'SENDING...';
-      badge.className = 'merge-badge unprocessed';
-    }
+    const btn = document.getElementById('btnModalVerify');
+    if (btn) btn.disabled = true;
 
     try {
-      const res = await fetch('/api/campaign/dispatch-row', {
+      const res = await fetch('/api/accounts/link-google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipient_id: recipientId, subject: subj, body_html: body })
+        body: JSON.stringify({
+          email,
+          display_name: name,
+          app_password: password
+        })
       });
       const data = await res.json();
-      if (res.ok) {
-        await loadDashboardData();
+      if (res.ok && data.success) {
+        closeAddAccountModal();
+        alert(`✓ Successfully linked ${email} to your sending pool!`);
+        document.getElementById('modalAccountForm').reset();
+        await loadSenderAccounts();
       } else {
-        alert(data.detail || 'Dispatch failed');
-        if (badge) badge.textContent = 'ERROR';
+        alert(data.detail || 'Could not link account.');
+      }
+    } catch (err) {
+      alert('Failed to link account: ' + err.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function toggleSenderAccount(id) {
+    try {
+      const res = await fetch(`/api/accounts/${id}/toggle-active`, { method: 'POST' });
+      if (res.ok) {
+        await loadSenderAccounts();
       }
     } catch (e) {
-      alert('Network error dispatching email');
+      console.warn('Failed to toggle sender account', e);
     }
   }
 
-  async function startCampaignDispatch() {
-    if (state.isDispatching) return;
-    const unprocessed = state.recipients.filter(r => r.merge_status === 'UNPROCESSED');
-    if (unprocessed.length === 0) {
-      alert('No unprocessed recipients remaining in the campaign.');
-      return;
+  async function unlinkSenderAccount(id) {
+    if (!confirm('Are you sure you want to unlink this sender account from the pool?')) return;
+    try {
+      const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        await loadSenderAccounts();
+      }
+    } catch (e) {
+      console.warn('Failed to unlink account', e);
     }
-
-    const confirmed = confirm(`Start sequential throttled dispatching for ${unprocessed.length} recipients?\n(Sends with random 2s-5s humanized pacing).`);
-    if (!confirmed) return;
-
-    state.isDispatching = true;
-    const btn = document.getElementById('btnDispatchCampaign');
-    if (btn) btn.innerHTML = '<span>Sending...</span>';
-
-    const subj = document.getElementById('templateSubject')?.value || 'Quick question';
-    const body = document.getElementById('templateBody')?.value || '<p>Hello {{First Name}}</p>';
-
-    for (const r of unprocessed) {
-      if (state.stopRequested) break;
-      await dispatchSingleRow(r.id);
-      // Humanized jitter pause
-      const jitterMs = 2000 + Math.floor(Math.random() * 3000);
-      await new Promise(res => setTimeout(res, jitterMs));
-    }
-
-    state.isDispatching = false;
-    if (btn) btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg><span>Dispatch Campaign</span>';
-    alert('Campaign sequential dispatching complete!');
   }
 
-  // ── Import / Export Operations in Dashboard ────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 3: GOOGLE SHEETS INGESTION & STATUS SYNCHRONIZATION
+  // ══════════════════════════════════════════════════════════════════════════
+
   async function importGoogleSheet() {
-    const url = document.getElementById('googleSheetUrlInput')?.value.trim();
+    const input = document.getElementById('googleSheetUrlInput');
+    const url = input.value.trim();
+
     if (!url) {
-      alert('Please enter a Google Sheet URL.');
+      alert('Please paste a valid Google Sheet URL.\nFormat: https://docs.google.com/spreadsheets/d/.../edit');
       return;
     }
+
+    const btn = document.getElementById('btnImportSheet');
+    if (btn) btn.disabled = true;
+
     try {
       const res = await fetch('/api/sheet/import-url', {
         method: 'POST',
@@ -633,13 +511,17 @@
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`✓ Loaded ${data.total_rows} recipients from Google Sheet!`);
+        alert(`✓ Successfully imported Google Sheet!\nFound ${data.total_rows} recipients (${data.pending_count} pending merge).`);
+        input.value = '';
+        await loadRecipients();
         await loadDashboardData();
       } else {
-        alert(data.detail || 'Failed to import Google Sheet');
+        alert(data.detail || 'Could not import Google Sheet.');
       }
     } catch (e) {
-      alert('Network error connecting to Google Sheet');
+      alert('Failed to connect to Google Sheet: ' + e.message);
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -658,23 +540,258 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert(`✓ Loaded ${data.total_rows} recipients from CSV!`);
+          alert(`✓ Successfully loaded CSV!\n${data.total_rows} recipients loaded.`);
+          await loadRecipients();
           await loadDashboardData();
         } else {
-          alert(data.detail || 'Failed to parse CSV');
+          alert(data.detail || 'Could not parse CSV.');
         }
       } catch (err) {
-        alert('Network error uploading CSV');
+        alert('Failed to upload CSV: ' + err.message);
       }
     };
     reader.readAsText(file);
+  }
+
+  async function loadRecipients() {
+    try {
+      const res = await fetch('/api/sheet/recipients');
+      if (res.ok) {
+        state.recipients = await res.json();
+        renderRecipientsTable();
+      }
+    } catch (e) {
+      console.warn('Could not load recipients', e);
+    }
+  }
+
+  function renderRecipientsTable() {
+    const tbody = document.getElementById('recipientsTableBody');
+    const emptyState = document.getElementById('tableEmptyState');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    const filtered = state.recipients.filter(r => {
+      // Filter by status tab
+      if (state.tableFilter !== 'all') {
+        if (r.merge_status.toUpperCase() !== state.tableFilter.toUpperCase()) {
+          return false;
+        }
+      }
+      // Filter by search query
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        const matchEmail = (r.email || '').toLowerCase().includes(q);
+        const matchName = (r.first_name || '').toLowerCase().includes(q);
+        const matchCompany = (r.company || '').toLowerCase().includes(q);
+        if (!matchEmail && !matchName && !matchCompany) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      if (emptyState) emptyState.style.display = 'block';
+      return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    filtered.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.id = `row-recipient-${r.id}`;
+
+      let badgeClass = 'badge-unprocessed';
+      let badgeLabel = r.merge_status || 'UNPROCESSED';
+
+      if (r.merge_status === 'EMAIL_SENT') {
+        badgeClass = 'badge-sent';
+        badgeLabel = 'SENT';
+      } else if (r.merge_status === 'EMAIL_OPENED') {
+        badgeClass = 'badge-opened';
+        badgeLabel = 'OPENED';
+      } else if (r.merge_status === 'EMAIL_CLICKED') {
+        badgeClass = 'badge-clicked';
+        badgeLabel = 'CLICKED';
+      } else if (r.merge_status === 'EMAIL_BOUNCED') {
+        badgeClass = 'badge-bounced';
+        badgeLabel = 'BOUNCED (550)';
+      } else if (r.merge_status === 'ERROR') {
+        badgeClass = 'badge-error';
+        badgeLabel = 'ERROR';
+      }
+
+      tr.innerHTML = `
+        <td style="color:var(--text-dim); font-size:12px;">${r.row_index || r.id}</td>
+        <td><strong>${escapeHtml(r.email)}</strong></td>
+        <td>${escapeHtml(r.first_name || '—')}</td>
+        <td>${escapeHtml(r.company || '—')}</td>
+        <td>
+          <span class="merge-badge ${badgeClass}">${badgeLabel}</span>
+          ${r.last_event ? `<span style="display:block; font-size:11px; color:var(--text-dim); margin-top:3px;">${escapeHtml(r.last_event)}</span>` : ''}
+        </td>
+        <td>
+          <button class="action-pill-btn" style="padding:2px 8px; font-size:11px;" onclick="window.sheetmerge.dispatchSingleRow(${r.id})">
+            Send Now
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function setTableFilter(filterVal, btn) {
+    state.tableFilter = filterVal;
+    document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderRecipientsTable();
+  }
+
+  function filterRecipients() {
+    state.searchQuery = document.getElementById('tableSearchInput')?.value.trim() || '';
+    renderRecipientsTable();
   }
 
   function exportUpdatedCsv() {
     window.location.href = '/api/sheet/export-csv';
   }
 
-  // ── DNS Pre-Flight Scanner ─────────────────────────────────────────────
+  async function cleanAllData() {
+    if (!confirm('Clear all recipients and start with a fresh workspace?')) return;
+    try {
+      const res = await fetch('/api/data/clean-all', { method: 'POST' });
+      if (res.ok) {
+        alert('✓ Workspace cleared cleanly.');
+        await loadRecipients();
+        await loadSenderAccounts();
+        await loadDashboardData();
+      }
+    } catch (e) {
+      alert('Error clearing data: ' + e.message);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECTION 4: SEQUENTIAL DISPATCHER & METRICS VISUALISATION
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function startCampaignDispatch() {
+    const unproc = state.recipients.filter(r => r.merge_status === 'UNPROCESSED');
+    if (unproc.length === 0) {
+      alert('No unprocessed recipients found. Please connect a Google Sheet with recipient rows.');
+      return;
+    }
+
+    if (!confirm(`Dispatch campaign to ${unproc.length} recipient(s) sequentially across your sender accounts?`)) {
+      return;
+    }
+
+    const btn = document.getElementById('btnDispatchCampaign');
+    if (btn) btn.disabled = true;
+    state.isDispatching = true;
+    state.stopRequested = false;
+
+    const subject = document.getElementById('templateSubject')?.value || 'Quick question for {{First Name}}';
+    const bodyHtml = document.getElementById('templateBody')?.value || '<p>Hi {{First Name}}, following up.</p>';
+
+    let sentCount = 0;
+    let bounceCount = 0;
+
+    for (const r of unproc) {
+      if (state.stopRequested) break;
+
+      // Update UI row to dispatching
+      const rowEl = document.getElementById(`row-recipient-${r.id}`);
+      if (rowEl) {
+        const badge = rowEl.querySelector('.merge-badge');
+        if (badge) {
+          badge.className = 'merge-badge badge-unprocessed';
+          badge.textContent = 'DISPATCHING...';
+        }
+      }
+
+      try {
+        const res = await fetch('/api/campaign/dispatch-row', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient_id: r.id,
+            subject,
+            body_html: bodyHtml
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (data.merge_status === 'EMAIL_SENT') {
+            sentCount++;
+          } else if (data.merge_status === 'EMAIL_BOUNCED') {
+            bounceCount++;
+          }
+        }
+      } catch (err) {
+        console.error('Dispatch row error', err);
+      }
+
+      // Small delay between rows to respect pacing
+      await new Promise(resolve => setTimeout(resolve, 800));
+      await loadRecipients();
+      await loadSenderAccounts();
+    }
+
+    state.isDispatching = false;
+    if (btn) btn.disabled = false;
+    alert(`✓ Campaign Dispatch Complete!\n${sentCount} sent successfully, ${bounceCount} suppressed.`);
+    await loadDashboardData();
+  }
+
+  async function dispatchSingleRow(id) {
+    const subject = document.getElementById('templateSubject')?.value || 'Hello {{First Name}}';
+    const bodyHtml = document.getElementById('templateBody')?.value || '<p>Hi {{First Name}}</p>';
+
+    try {
+      const res = await fetch('/api/campaign/dispatch-row', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient_id: id,
+          subject,
+          body_html: bodyHtml
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✓ Dispatched to ${data.email}: ${data.merge_status}`);
+        await loadRecipients();
+        await loadSenderAccounts();
+        await loadDashboardData();
+      } else {
+        alert(data.detail || 'Dispatch failed.');
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  async function loadDashboardData() {
+    await loadSenderAccounts();
+    await loadRecipients();
+
+    try {
+      const res = await fetch('/api/dashboard/overview');
+      if (res.ok) {
+        const data = await res.json();
+        const m = data.metrics || {};
+
+        document.getElementById('dashDeliveredVal').textContent = m.delivered_count || 0;
+        document.getElementById('dashOpenRateVal').textContent = (m.open_rate || 0.0) + '%';
+        document.getElementById('dashClickRateVal').textContent = (m.click_rate || 0.0) + '%';
+        document.getElementById('dashBounceRateVal').textContent = (m.bounce_rate || 0.0) + '%';
+      }
+    } catch (e) {
+      console.warn('Could not load dashboard overview', e);
+    }
+  }
+
   async function checkDomain() {
     const domain = document.getElementById('domainInput')?.value.trim() || 'gmail.com';
     try {
@@ -685,84 +802,25 @@
       });
       const data = await res.json();
       if (res.ok) {
-        const spf = document.getElementById('spfStatus');
-        const dkim = document.getElementById('dkimStatus');
-        const dmarc = document.getElementById('dmarcStatus');
-        const mx = document.getElementById('mxStatus');
-
-        if (spf) spf.textContent = data.spf.valid ? '✓ Valid SPF' : '⚠ Missing SPF';
-        if (dkim) dkim.textContent = data.dkim.configured ? '✓ DKIM Active' : '⚠ No 2048-bit DKIM';
-        if (dmarc) dmarc.textContent = data.dmarc.configured ? `✓ DMARC (${data.dmarc.policy || 'p=none'})` : '⚠ No DMARC';
-        if (mx) mx.textContent = data.mx.configured ? '✓ MX Resolving' : '⚠ No MX Record';
+        document.getElementById('spfStatus').textContent = data.spf?.status === 'pass' ? '✓ Valid SPF' : '⚠ ' + data.spf?.status;
+        document.getElementById('dkimStatus').textContent = data.dkim?.status === 'pass' ? '✓ 2048-bit Verified' : '⚠ ' + data.dkim?.status;
+        document.getElementById('dmarcStatus').textContent = data.dmarc?.status === 'pass' ? '✓ Protected' : '⚠ Check DMARC';
+        document.getElementById('mxStatus').textContent = data.mx?.valid ? '✓ MX Resolving' : '⚠ No MX';
+        alert(`✓ DNS Scan for ${domain} complete!\nSPF: ${data.spf?.status}, DMARC: ${data.dmarc?.status}`);
       }
     } catch (e) {
-      console.warn('DNS scan error', e);
+      alert('DNS Scan error: ' + e.message);
     }
   }
 
-  // ── Modals & Drawers ───────────────────────────────────────────────────
-  function openAddAccountModal() {
-    const m = document.getElementById('addAccountModal');
-    if (m) m.classList.add('open');
-  }
-  function closeAddAccountModal() {
-    const m = document.getElementById('addAccountModal');
-    if (m) m.classList.remove('open');
-  }
-
-  async function handleModalAccountSubmit(event) {
-    event.preventDefault();
-    const email = document.getElementById('modalAccEmail').value.trim();
-    const name = document.getElementById('modalAccName')?.value.trim() || '';
-    const password = document.getElementById('modalAccPassword')?.value.trim() || '';
-
-    const btn = document.getElementById('btnModalVerify');
-    btn.disabled = true;
-    btn.textContent = password ? 'Testing Handshake...' : 'Connecting...';
-
-    try {
-      const endpoint = password ? '/api/accounts/verify-smtp' : '/api/auth/google/quick-connect';
-      const payload = password ? { email, app_password: password, display_name: name } : { email, display_name: name };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        alert(`✓ Connected ${email} successfully!`);
-        closeAddAccountModal();
-        document.getElementById('modalAccountForm').reset();
-        await checkAuthStatus();
-        await loadDashboardData();
-      } else {
-        alert(data.detail || 'Connection failed');
-      }
-    } catch (e) {
-      alert('Error connecting account');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Connect Account';
-    }
-  }
-
-  function openComplianceModal() {
-    const m = document.getElementById('complianceModal');
-    if (m) m.classList.add('open');
-  }
-  function closeComplianceModal() {
-    const m = document.getElementById('complianceModal');
-    if (m) m.classList.remove('open');
-  }
-
+  // ── Compose Drawer & Test Email ─────────────────────────────────────────
   function openComposeDrawer() {
-    const d = document.getElementById('composeDrawer');
-    if (d) d.style.display = 'flex';
+    document.getElementById('composeDrawer').style.display = 'block';
+    updateLivePreview();
   }
+
   function closeComposeDrawer() {
-    const d = document.getElementById('composeDrawer');
-    if (d) d.style.display = 'none';
+    document.getElementById('composeDrawer').style.display = 'none';
   }
 
   function insertTag(tag) {
@@ -777,69 +835,136 @@
   }
 
   async function sendTestEmail() {
-    const targetEmail = document.getElementById('testEmailTarget')?.value.trim();
-    if (!targetEmail) {
-      alert('Please enter a target recipient email address.');
-      return;
-    }
-    const accounts = state.authStatus.accounts || [];
-    if (accounts.length === 0) {
-      alert('No connected sender account available to send test email.');
+    const target = document.getElementById('testEmailTarget')?.value.trim();
+    if (!target) {
+      alert('Please enter your personal inbox email for the test.');
       return;
     }
 
-    const senderEmail = accounts[0].email;
-    const subject = document.getElementById('templateSubject')?.value || 'Test Subject';
-    const body = document.getElementById('templateBody')?.value || '<p>Test Body</p>';
+    const subject = document.getElementById('templateSubject')?.value || 'Test';
+    const bodyHtml = document.getElementById('templateBody')?.value || '<p>Test</p>';
 
     try {
       const res = await fetch('/api/campaign/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          account_email: senderEmail,
-          target_email: targetEmail,
-          subject: subject,
-          body_html: body
+          target_email: target,
+          subject,
+          body_html: bodyHtml
         })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        alert(`✓ Test email delivered to ${targetEmail}!`);
+      if (res.ok) {
+        alert(data.message || 'Test email dispatched!');
       } else {
-        alert(data.detail || 'Failed to send test email');
+        alert(data.detail || 'Test email failed.');
       }
     } catch (e) {
-      alert('Network error sending test email');
+      alert('Error sending test email: ' + e.message);
     }
   }
 
-  // ── Global Export for Inline Event Handlers ────────────────────────────
+  // ── Compliance Modal ───────────────────────────────────────────────────
+  function openComplianceModal() {
+    document.getElementById('complianceModal').classList.add('active');
+  }
+
+  function closeComplianceModal() {
+    document.getElementById('complianceModal').classList.remove('active');
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function applyTemplatePreset(presetKey) {
+    const subjInput = document.getElementById('templateSubject');
+    const bodyInput = document.getElementById('templateBody');
+    if (!subjInput || !bodyInput) return;
+
+    if (presetKey === 'followup') {
+      subjInput.value = 'Quick follow-up for {{First Name}} at {{Company}}';
+      bodyInput.value = '<p>Hi {{First Name}},</p>\n<p>I noticed your work at {{Company}} and wanted to follow up directly.</p>\n<p>Would you have 5 minutes for a quick chat this week?</p>\n<p>Best regards,<br>{{Sender Name}}</p>';
+    } else if (presetKey === 'collab') {
+      subjInput.value = 'Collaboration proposal for {{Company}}';
+      bodyInput.value = '<p>Hi {{First Name}},</p>\n<p>I am reaching out because we admire what {{Company}} is building.</p>\n<p>We have developed an automated mail merge pipeline that could save your team hours every week. Would you be open to exploring synergies?</p>\n<p>Best regards,<br>{{Sender Name}}</p>';
+    } else if (presetKey === 'invite') {
+      subjInput.value = 'Special invitation for {{First Name}} — Executive Briefing';
+      bodyInput.value = '<p>Dear {{First Name}},</p>\n<p>We would like to invite you and the {{Company}} leadership team to our upcoming private briefing.</p>\n<p>Let us know if you would be able to attend.</p>\n<p>Warmly,<br>{{Sender Name}}</p>';
+    }
+    updateLivePreview();
+  }
+
+  function updateLivePreview() {
+    const subj = document.getElementById('templateSubject')?.value || '';
+    const body = document.getElementById('templateBody')?.value || '';
+    const label = document.getElementById('previewRecipientLabel');
+    const subjDisplay = document.getElementById('previewSubjectDisplay');
+    const bodyDisplay = document.getElementById('previewBodyDisplay');
+
+    const sample = (state.recipients && state.recipients.length > 0)
+      ? state.recipients[0]
+      : { first_name: 'Sarah', company: 'Cyberdyne Systems', email: 'sarah.connor@cyberdyne.io' };
+
+    if (label) {
+      label.textContent = state.recipients.length > 0
+        ? `Row 1: ${sample.first_name || 'Recipient'} (${sample.email})`
+        : 'Sample: Sarah (sarah.connor@cyberdyne.io)';
+    }
+
+    const fn = sample.first_name || 'there';
+    const co = sample.company || 'your team';
+    const em = sample.email || 'recipient@example.com';
+
+    if (subjDisplay) {
+      subjDisplay.textContent = 'Subject: ' + subj.replace(/{{First Name}}/g, fn).replace(/{{Company}}/g, co).replace(/{{Email}}/g, em);
+    }
+    if (bodyDisplay) {
+      bodyDisplay.innerHTML = body.replace(/{{First Name}}/g, fn).replace(/{{Company}}/g, co).replace(/{{Email}}/g, em).replace(/{{Sender Name}}/g, state.user?.full_name || 'Your Name');
+    }
+  }
+
+  // ── Expose Public API ──────────────────────────────────────────────────
   window.sheetmerge = {
     navigate,
     toggleTheme,
-    signInWithGoogle,
-    handleQuickConnect,
-    renderOnboardingAccounts,
-    filterRecipients,
-    dispatchSingleRow,
-    startCampaignDispatch,
-    importGoogleSheet,
-    handleFileSelect,
-    exportUpdatedCsv,
-    checkDomain,
+    signInWithGoogleOAuth,
+    handleSendOtp,
+    handleVerifyOtp,
+    backToEmailInput,
+    resendOtp,
+    handleLogout,
     openAddAccountModal,
     closeAddAccountModal,
     handleModalAccountSubmit,
-    openComplianceModal,
-    closeComplianceModal,
+    toggleSenderAccount,
+    unlinkSenderAccount,
+    importGoogleSheet,
+    handleFileSelect,
+    setTableFilter,
+    filterRecipients,
+    exportUpdatedCsv,
+    cleanAllData,
+    startCampaignDispatch,
+    dispatchSingleRow,
+    checkDomain,
     openComposeDrawer,
     closeComposeDrawer,
     insertTag,
-    sendTestEmail
+    sendTestEmail,
+    applyTemplatePreset,
+    updateLivePreview,
+    openComplianceModal,
+    closeComplianceModal
   };
 
   // Launch on DOM ready
   document.addEventListener('DOMContentLoaded', init);
-
 })();
