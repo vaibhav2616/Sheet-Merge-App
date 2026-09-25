@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  sheetmerge-app:
+    build: .
+    container_name: sheetmerge_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - sheetmerge_data:/app/backend/data
+    environment:
+      - SHEETMERGE_DB_PATH=/app/backend/data/sheetmerge.db
+    restart: unless-stopped
+
+volumes:
+  sheetmerge_data:
