@@ -3,457 +3,692 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SheetMerge Pro — Mail Merge Campaign & Deliverability Shield</title>
+  <title>SheetMerge Pro — High-Deliverability Mail Merge & Gmail Multi-Account Suite</title>
+  <meta name="description" content="Zero-synthetic enterprise mail merge engine with live Google Sheets ingestion, multi-account Gmail rotation, and single-column YAMM status.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
-  <!-- Outer Application Canvas Frame -->
-  <div class="app-canvas">
-    
-    <!-- Navigation Rail (Desktop Vertical / Mobile Bottom Dock) -->
-    <nav class="nav-rail">
+  <!-- Outer Application Canvas -->
+  <div class="app-canvas" id="appCanvas">
+
+    <!-- Global Navigation Rail -->
+    <nav class="nav-rail" id="navRail">
       <div class="rail-top">
-        <div class="rail-brand" title="SheetMerge Pro">
+        <div class="rail-brand" title="SheetMerge Pro" onclick="window.sheetmerge.navigate('landing')">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
         </div>
-        <button class="rail-btn active" title="Campaign Dashboard" onclick="window.sheetmerge.filterByStage('All')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
+        <button class="rail-btn" id="navLandingBtn" title="Welcome & Overview" onclick="window.sheetmerge.navigate('landing')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         </button>
-        <button class="rail-btn" title="Recipient Merge List" onclick="document.getElementById('tableSearchInput').focus()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+        <button class="rail-btn" id="navOnboardingBtn" title="Onboarding & Setup" onclick="window.sheetmerge.navigate('onboarding')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         </button>
-        <button class="rail-btn" title="Deliverability DNS Shield" onclick="document.querySelector('.security-tile').scrollIntoView({behavior:'smooth'})">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
+        <button class="rail-btn" id="navDashboardBtn" title="Campaign Dashboard (Locked until setup)" onclick="window.sheetmerge.navigate('dashboard')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
         </button>
-        <button class="rail-btn" title="Compose Campaign Template" onclick="window.sheetmerge.openComposeDrawer()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-          </svg>
+        <button class="rail-btn" id="navComplianceBtn" title="Service Compliances" onclick="window.sheetmerge.openComplianceModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         </button>
       </div>
 
       <div class="rail-bottom">
-        <button class="rail-btn" title="Quick Search (Ctrl+K)" onclick="window.sheetmerge.openPalette()">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </button>
-        <div class="rail-avatar" title="Vaibhav Rastogi (Deliverability Lead)">VR</div>
+        <button class="rail-btn" title="Toggle Dark/Light Mode" id="themeToggleBtn" onclick="window.sheetmerge.toggleTheme()">🌙</button>
+        <div class="rail-avatar" id="railUserAvatar" title="User Profile">SM</div>
       </div>
     </nav>
 
-    <!-- Main Workspace -->
+    <!-- Main Workspace Container -->
     <main class="workspace">
-      
-      <!-- Top Header Bar -->
-      <header class="top-header">
-        <div class="header-brand-pill">
-          <span style="font-weight:700;">SheetMerge Pro</span>
-          <span class="badge-shield">🛡️ 50-Daily Verified Quota Shield Active</span>
-        </div>
 
-        <div class="header-actions">
-          <button class="action-pill-btn" onclick="window.sheetmerge.openPalette()" title="Command Palette (Ctrl+K)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span style="font-size:12px; font-weight:600; opacity:0.85;">Search</span>
-            <kbd style="background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-size:10px;">⌘K</kbd>
-          </button>
-
-          <button class="action-pill-btn" id="themeToggleBtn" onclick="window.sheetmerge.toggleTheme()" title="Toggle Theme">
-            🌙
-          </button>
-
-          <button class="primary-add-btn" onclick="window.sheetmerge.openComposeDrawer()" title="Compose Mail Merge Template">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>Compose Merge</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- Bento-Box Grid Layout -->
-      <section class="bento-grid">
-
-        <!-- 1. Hero Tile: Mail Merge Campaign Center & 50-Daily Quota -->
-        <div class="hero-tile">
-          <div class="hero-header">
-            <div class="hero-title-group">
-              <h2>Campaign Dispatcher</h2>
-              <h3>Daily Quota & Delivery Health</h3>
-              <div class="hero-value-wrap">
-                <div class="hero-giant-val" id="heroQuotaVal">42 / 50</div>
-                <div class="hero-val-sub">valid emails sent today</div>
-              </div>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;" id="heroQuotaSubtext">
-                <span style="color:#10b981;">✓ 8 deliveries remaining</span> · Hard bounces excluded from quota
-              </div>
-            </div>
-
-            <div class="hero-metrics-side">
-              <div class="metric-item">
-                <div class="metric-label">Open Rate</div>
-                <div class="metric-val" id="openRateVal" style="color:#a855f7;">66.7%</div>
-              </div>
-              <div class="metric-item">
-                <div class="metric-label">Click Rate</div>
-                <div class="metric-val" id="clickRateVal" style="color:#06b6d4;">28.6%</div>
-              </div>
-              <div class="metric-item">
-                <div class="metric-label">Domain Health</div>
-                <div class="metric-val" id="domainHealthVal" style="color:#10b981;">98 / 100</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Dynamic Mail Merge Stage Pillar Chart -->
-          <div class="pillar-chart" id="pillarChart">
-            <!-- Populated dynamically: Queue, Sent, Opened, Clicked, Bounced -->
-          </div>
-        </div>
-
-        <!-- 2. Sender Accounts & Multi-Account Rotation -->
-        <div class="accounts-tile">
-          <div class="tile-header-row">
-            <div class="tile-header-title">
-              <h4>Sender Accounts</h4>
-              <p>50 Valid Sends/Account · Auto-Rotation</p>
-            </div>
-            <button class="action-pill-btn" style="padding:4px 10px; font-size:11px;" onclick="window.sheetmerge.openAddAccountModal()">+ Connect Gmail</button>
-          </div>
-
-          <div class="account-items-list" id="accountItemsList">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--card-border-subtle); display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11px; color:var(--text-muted);">Pacing: <strong>Random 2.0s–5.0s jitter</strong></span>
-            <span class="badge-shield" style="font-size:10px;">Humanized</span>
-          </div>
-        </div>
-
-        <!-- 3. Middle Row: Pre-Flight DNS Shield & Anti-Spam Analyzer -->
-        <div class="middle-row-wrap">
+      <!-- ====================================================================
+           VIEW 1: WELCOME & LANDING PAGE (Animated Showcase & Product Tour)
+           ==================================================================== -->
+      <section class="app-view active" id="viewLanding">
+        <div class="landing-hero">
+          <div class="hero-glow-sphere"></div>
           
-          <!-- Pre-Flight DNS Shield -->
-          <div class="security-tile">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h4 style="font-size:16px; font-weight:700;">Pre-Flight DNS Shield</h4>
-                <span class="badge-shield">SPF / DKIM / DMARC</span>
-              </div>
-              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                Validates DNS alignment before sending to prevent enterprise firewall blocks.
-              </p>
-
-              <div class="dns-check-grid" id="dnsGrid">
-                <div class="dns-metric-card">
-                  <div class="dns-label">SPF Record</div>
-                  <div class="dns-status valid" id="spfStatus">✓ Valid (~all / -all)</div>
-                </div>
-                <div class="dns-metric-card">
-                  <div class="dns-label">DKIM Signature</div>
-                  <div class="dns-status valid" id="dkimStatus">✓ 2048-bit Verified</div>
-                </div>
-                <div class="dns-metric-card">
-                  <div class="dns-label">DMARC Policy</div>
-                  <div class="dns-status valid" id="dmarcStatus">✓ Protected (p=reject)</div>
-                </div>
-                <div class="dns-metric-card">
-                  <div class="dns-label">MX Server</div>
-                  <div class="dns-status valid" id="mxStatus">✓ Resolving</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="dns-input-row">
-              <input type="text" class="dns-input" id="domainInput" value="gmail.com" placeholder="Enter sending domain...">
-              <button class="dns-check-btn" onclick="window.sheetmerge.checkDomain()">Run DNS Scan</button>
-            </div>
+          <div class="hero-top-badge">
+            <span class="pulse-dot"></span>
+            <span>Zero-Synthetic Enterprise Mail Merge · Live Google Integration</span>
           </div>
 
-          <!-- Content Anti-Spam Analyzer -->
-          <div class="spam-tile">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h4 style="font-size:16px; font-weight:700;">45-Rule Spam Analyzer</h4>
-                <span style="font-size:11px; background:rgba(139,92,246,0.18); color:#c084fc; padding:3px 8px; border-radius:6px; font-weight:700;">Heuristic Engine</span>
-              </div>
-              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                Scans subject & body for caps ratio, trigger keywords, and link density.
-              </p>
+          <h1 class="landing-title">
+            The Intelligent <span class="gradient-text">Google Sheets Mail Merge</span> Built for Real Inbox Delivery
+          </h1>
 
-              <div class="spam-score-display">
-                <div class="spam-circle" id="spamScoreCircle">96</div>
-                <div class="spam-summary-texts">
-                  <strong style="color:#10b981;" id="spamScoreLabel">High Deliverability Score</strong>
-                  <span style="color:var(--text-muted); font-size:12px;" id="spamScoreDetail">0 Spam triggers · Caps 2% · Clean link ratio</span>
-                </div>
-              </div>
-            </div>
+          <p class="landing-subtitle">
+            Connect live Google Sheets directly to multiple authenticated Google accounts. Experience sequential throttled dispatching with humanized jitter, automated 5xx bounce suppression, and YAMM single-status compatibility.
+          </p>
 
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:12px; color:var(--text-muted);">Test message body against firewall rules:</span>
-              <button class="action-pill-btn" style="padding:6px 14px; font-size:11px;" onclick="window.sheetmerge.openComposeDrawer()">Inspect Body</button>
-            </div>
+          <div class="landing-cta-row">
+            <button class="btn-primary-glow" id="btnLandingStart" onclick="window.sheetmerge.navigate('onboarding')">
+              <span>Start Account Setup & Onboarding</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+            <button class="btn-glass" onclick="window.sheetmerge.openComplianceModal()">
+              <span>Service Compliance Specs</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </button>
           </div>
 
+          <!-- Feature Cards Grid with Micro-Animations -->
+          <div class="landing-features-grid">
+            
+            <div class="feature-card">
+              <div class="feature-icon" style="background:rgba(99,102,241,0.15); color:#818cf8;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </div>
+              <h3>Live Google Sheets Engine</h3>
+              <p>Paste any public Google Sheet link or upload a CSV. Auto-detects columns, replaces <code>{{First Name}}</code> tags, and syncs status.</p>
+              <div class="feature-tag">YAMM Single Status Standard</div>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon" style="background:rgba(6,182,212,0.15); color:#22d3ee;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
+              <h3>Multi-Account Quota Pool</h3>
+              <p>Connect multiple user-entered Google Accounts with TLS verification. Aggregates quota (50/day each) and auto-rotates smoothly.</p>
+              <div class="feature-tag">50 Verified Daily Quota Protection</div>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon" style="background:rgba(16,185,129,0.15); color:#34d399;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              </div>
+              <h3>Humanized Jitter Pacing</h3>
+              <p>Dispatches emails sequentially with randomized 2.0s–5.0s delays to emulate natural human sending and bypass spam triggers.</p>
+              <div class="feature-tag">Anti-Spam & Reputation Shield</div>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon" style="background:rgba(244,63,94,0.15); color:#fb7185;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              </div>
+              <h3>5xx Bounce Suppression</h3>
+              <p>Detects permanent hard bounces instantly, adds them to a persistent suppression list, and never penalizes your daily sending quota.</p>
+              <div class="feature-tag">Reputation Defense</div>
+            </div>
+
+          </div>
         </div>
+      </section>
 
-        <!-- 4. Mail Merge Recipient List & Dispatcher Table -->
-        <div class="merge-table-tile">
-          <div class="table-header-bar">
-            <div class="table-title-area">
-              <h3>Campaign Recipients & Live Status</h3>
-              <p>YAMM Single 'Merge Status' Column Standard · Automatic 5xx Bounce Suppression</p>
+
+      <!-- ====================================================================
+           VIEW 2: ONBOARDING & PROFILE BUILDUP WIZARD (Gated Access)
+           ==================================================================== -->
+      <section class="app-view" id="viewOnboarding">
+        <div class="onboarding-container">
+          
+          <!-- Onboarding Stepper Header -->
+          <div class="stepper-header">
+            <h2>Account Setup & Profile Buildup</h2>
+            <p>Complete your workspace profile and connect at least one verified Google Account to unlock your campaign dashboard.</p>
+            
+            <div class="stepper-nav">
+              <div class="step-item active" id="stepIndicator1" onclick="window.sheetmerge.goToStep(1)">
+                <div class="step-num">1</div>
+                <span>Profile Buildup</span>
+              </div>
+              <div class="step-connector" id="connector1"></div>
+              <div class="step-item" id="stepIndicator2" onclick="window.sheetmerge.goToStep(2)">
+                <div class="step-num">2</div>
+                <span>Connect Google Account</span>
+              </div>
+              <div class="step-connector" id="connector2"></div>
+              <div class="step-item" id="stepIndicator3" onclick="window.sheetmerge.goToStep(3)">
+                <div class="step-num">3</div>
+                <span>Connect Sheet / CSV</span>
+              </div>
+              <div class="step-connector" id="connector3"></div>
+              <div class="step-item" id="stepIndicator4">
+                <div class="step-num">4</div>
+                <span>Verify & Unlock</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wizard Card Frame -->
+          <div class="wizard-card">
+
+            <!-- STEP 1: Profile Buildup -->
+            <div class="wizard-step-pane active" id="wizardStep1">
+              <div class="pane-title">
+                <h3>Step 1: Tell Us About Your Workspace</h3>
+                <p>Set up your sender identity and deliverability goals.</p>
+              </div>
+
+              <form id="profileForm" onsubmit="window.sheetmerge.handleProfileSubmit(event)">
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label for="profFullName">Your Full Name <span class="required">*</span></label>
+                    <input type="text" id="profFullName" class="custom-input" placeholder="e.g. Vaibhav Rastogi" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="profCompany">Company or Project Name</label>
+                    <input type="text" id="profCompany" class="custom-input" placeholder="e.g. Acme Outreach" />
+                  </div>
+                  <div class="form-group">
+                    <label for="profRole">Your Role</label>
+                    <input type="text" id="profRole" class="custom-input" placeholder="e.g. Growth Lead / Founder" />
+                  </div>
+                  <div class="form-group full-width">
+                    <label for="profGoal">Target Daily Volume (Emails per day)</label>
+                    <select id="profGoal" class="custom-input">
+                      <option value="50">50 sends/day (1 free Gmail account)</option>
+                      <option value="100">100 sends/day (2 connected Gmail accounts)</option>
+                      <option value="250">250+ sends/day (Multi-account pool)</option>
+                    </select>
+                    <span class="field-hint">Free Gmail accounts support up to 50 verified recipients per day. We pool accounts together automatically.</span>
+                  </div>
+                </div>
+
+                <div class="wizard-footer">
+                  <div></div>
+                  <button type="submit" class="btn-primary-glow">
+                    <span>Save Profile & Continue</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                  </button>
+                </div>
+              </form>
             </div>
 
-            <div class="table-actions">
-              <input type="text" class="search-input-pill" id="tableSearchInput" placeholder="Filter by email, name, or company...">
-              <button class="dispatch-btn" onclick="window.sheetmerge.startCampaignDispatch()">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span>Dispatch Campaign</span>
+            <!-- STEP 2: Connect Google Account(s) -->
+            <div class="wizard-step-pane" id="wizardStep2">
+              <div class="pane-title">
+                <h3>Step 2: Connect Your Google / Gmail Accounts</h3>
+                <p>Authenticate real Google Accounts via 16-character App Passwords. Add as many accounts as you need.</p>
+              </div>
+
+              <!-- List of currently connected accounts in wizard -->
+              <div class="wizard-accounts-summary" id="wizardAccountsList">
+                <!-- Dynamically populated -->
+              </div>
+
+              <div class="add-account-box">
+                <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text-main);">+ Connect a Google Account</h4>
+                <form id="wizardAccountForm" onsubmit="window.sheetmerge.handleAccountVerify(event)">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label for="wizAccEmail">Google / Gmail Address <span class="required">*</span></label>
+                      <input type="email" id="wizAccEmail" class="custom-input" placeholder="yourname@gmail.com" required />
+                    </div>
+                    <div class="form-group">
+                      <label for="wizAccName">Sender Display Name</label>
+                      <input type="text" id="wizAccName" class="custom-input" placeholder="e.g. Vaibhav Rastogi" />
+                    </div>
+                    <div class="form-group full-width">
+                      <label for="wizAccPassword">16-Character Google App Password <span class="required">*</span></label>
+                      <input type="password" id="wizAccPassword" class="custom-input" placeholder="xxxx yyyy zzzz wwww" required autocomplete="off" />
+                      <div class="password-guidance">
+                        <span>💡 Requires 2-Step Verification enabled. Generate a password under Google Account -> Security -> <strong>App Passwords</strong>.</span>
+                        <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">Open Google App Passwords ↗</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                    <button type="submit" class="btn-primary" id="btnVerifyAccount">
+                      <span id="btnVerifyText">Authenticate & Save Account</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="wizard-footer">
+                <button type="button" class="btn-glass" onclick="window.sheetmerge.goToStep(1)">Back</button>
+                <button type="button" class="btn-primary-glow" id="btnStep2Next" onclick="window.sheetmerge.goToStep(3)">
+                  <span>Continue to Sheet Connection</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- STEP 3: Connect Sheet / CSV -->
+            <div class="wizard-step-pane" id="wizardStep3">
+              <div class="pane-title">
+                <h3>Step 3: Connect Your Google Sheet or Recipient CSV</h3>
+                <p>Import your outreach list. No synthetic data is used — your real data powers the merge.</p>
+              </div>
+
+              <div class="sheet-connection-options">
+                <!-- Option A: Google Sheet Link -->
+                <div class="sheet-option-card">
+                  <h4>Option A: Live Google Sheet URL</h4>
+                  <p>Paste the sharing link to your Google Sheet (must be set to 'Anyone with the link can view').</p>
+                  <div class="sheet-url-box">
+                    <input type="url" id="wizSheetUrl" class="custom-input" placeholder="https://docs.google.com/spreadsheets/d/.../edit" />
+                    <button class="btn-primary" onclick="window.sheetmerge.importWizardSheet()">Connect Sheet</button>
+                  </div>
+                </div>
+
+                <!-- Option B: CSV File Upload -->
+                <div class="sheet-option-card">
+                  <h4>Option B: Direct CSV File Upload</h4>
+                  <p>Upload a .csv file exported from Excel, Google Sheets, or your CRM.</p>
+                  <input type="file" id="wizCsvFileInput" accept=".csv,.txt" style="display:none;" onchange="window.sheetmerge.handleWizardFileSelect(event)">
+                  <div class="csv-upload-dropzone" onclick="document.getElementById('wizCsvFileInput').click()">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Click to select CSV file</span>
+                    <span style="font-size:11px; color:var(--text-muted);">Headers: Email, First Name, Company, Merge Status</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Sheet Preview Box -->
+              <div class="sheet-preview-wrap" id="wizSheetPreview" style="display:none;">
+                <div class="preview-header">
+                  <span id="wizSheetSourceLabel">Google Sheet Preview</span>
+                  <span class="badge-shield" id="wizSheetRowCount">0 recipients loaded</span>
+                </div>
+                <div class="preview-table-scroll">
+                  <table class="preview-table" id="wizPreviewTable">
+                    <!-- Populated dynamically -->
+                  </table>
+                </div>
+              </div>
+
+              <div class="wizard-footer">
+                <button type="button" class="btn-glass" onclick="window.sheetmerge.goToStep(2)">Back</button>
+                <button type="button" class="btn-primary-glow" onclick="window.sheetmerge.launchLoadingScreen()">
+                  <span>Launch Verification & Open Dashboard</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- STEP 4: Interactive Loading & Engagement Screen -->
+            <div class="wizard-step-pane" id="wizardStep4">
+              <div class="loading-engagement-box">
+                <div class="radar-spinner-wrap">
+                  <div class="radar-ring r1"></div>
+                  <div class="radar-ring r2"></div>
+                  <div class="radar-core">🛡️</div>
+                </div>
+
+                <h3 id="loadingEngagementTitle">Configuring High-Deliverability Pipeline...</h3>
+                <p id="loadingEngagementSubtitle">Validating SMTP handshakes and SPF/DKIM DNS alignments...</p>
+
+                <div class="engagement-progress-bar">
+                  <div class="progress-fill" id="engagementProgressFill"></div>
+                </div>
+
+                <div class="engagement-checks-list" id="engagementChecksList">
+                  <div class="check-row" id="checkRow1">
+                    <span class="check-icon">⏳</span>
+                    <span>Validating User Profile & Identity</span>
+                  </div>
+                  <div class="check-row" id="checkRow2">
+                    <span class="check-icon">⏳</span>
+                    <span>Testing Gmail SMTP TLS Handshakes</span>
+                  </div>
+                  <div class="check-row" id="checkRow3">
+                    <span class="check-icon">⏳</span>
+                    <span>Calibrating 2.0s–5.0s Humanized Pacing Jitter</span>
+                  </div>
+                  <div class="check-row" id="checkRow4">
+                    <span class="check-icon">⏳</span>
+                    <span>Initializing Single YAMM 'Merge Status' Column Engine</span>
+                  </div>
+                </div>
+
+                <button class="btn-primary-glow" id="btnEnterDashboard" style="display:none; margin-top:24px;" onclick="window.sheetmerge.completeOnboardingAndEnterDashboard()">
+                  <span>Enter Campaign Dashboard</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           VIEW 3: UNIFIED MULTI-ACCOUNT CAMPAIGN DASHBOARD
+           ==================================================================== -->
+      <section class="app-view" id="viewDashboard">
+        
+        <!-- Dashboard Top Header Bar -->
+        <header class="top-header">
+          <div class="header-brand-pill">
+            <span style="font-weight:700;">SheetMerge Pro</span>
+            <span class="badge-shield" id="dashUserBadge">👤 Loading...</span>
+            <span class="badge-shield" id="dashQuotaShield">🛡️ Combined Quota Active</span>
+          </div>
+
+          <div class="header-actions">
+            <button class="action-pill-btn" onclick="window.sheetmerge.openAddAccountModal()" title="Connect Additional Gmail Account">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>+ Add Gmail</span>
+            </button>
+            <button class="action-pill-btn" onclick="window.sheetmerge.exportUpdatedCsv()" title="Export Updated CSV with Merge Status">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Export CSV</span>
+            </button>
+            <button class="primary-add-btn" onclick="window.sheetmerge.openComposeDrawer()" title="Compose Mail Merge Template">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Compose Merge</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Bento-Box Grid Layout -->
+        <div class="bento-grid">
+
+          <!-- 1. Hero Tile: Combined Multi-Account Quota & Campaign Health -->
+          <div class="hero-tile">
+            <div class="hero-header">
+              <div class="hero-title-group">
+                <h2>Campaign Dispatcher</h2>
+                <h3>Unified Multi-Account Delivery Pool</h3>
+                <div class="hero-value-wrap">
+                  <div class="hero-giant-val" id="dashQuotaVal">0 / 0</div>
+                  <div class="hero-val-sub">valid emails sent today across all accounts</div>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;" id="dashQuotaSubtext">
+                  <span style="color:#10b981;">0 deliveries remaining</span> · Hard bounces excluded from quota
+                </div>
+              </div>
+
+              <div class="hero-metrics-side">
+                <div class="metric-item">
+                  <div class="metric-label">Open Rate</div>
+                  <div class="metric-val" id="dashOpenRateVal" style="color:#a855f7;">0.0%</div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">Click Rate</div>
+                  <div class="metric-val" id="dashClickRateVal" style="color:#06b6d4;">0.0%</div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">Bounce Rate</div>
+                  <div class="metric-val" id="dashBounceRateVal" style="color:#f43f5e;">0.0%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage Pillar Chart -->
+            <div class="pillar-chart" id="dashPillarChart">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- 2. Multi-Account Unified Status Cards -->
+          <div class="accounts-tile">
+            <div class="tile-header-row">
+              <div class="tile-header-title">
+                <h4>Connected Accounts Pool</h4>
+                <p>Status for all user accounts at once</p>
+              </div>
+              <button class="action-pill-btn" style="padding:4px 10px; font-size:11px;" onclick="window.sheetmerge.openAddAccountModal()">+ Connect Another</button>
+            </div>
+
+            <div class="account-items-list" id="dashAccountsList">
+              <!-- Populated dynamically -->
+            </div>
+
+            <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--card-border-subtle); display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:var(--text-muted);">Pacing: <strong>Random 2.0s–5.0s jitter</strong></span>
+              <span class="badge-shield" style="font-size:10px;">Sequential Delivery</span>
+            </div>
+          </div>
+
+          <!-- 3. Pre-Flight DNS Shield & Spam Analyzer Row -->
+          <div class="middle-row-wrap">
+            
+            <!-- DNS Shield -->
+            <div class="security-tile">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <h4 style="font-size:16px; font-weight:700;">Pre-Flight DNS Shield</h4>
+                  <span class="badge-shield">SPF / DKIM / DMARC</span>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                  Verify DNS records before dispatching to maintain zero-spam inboxing.
+                </p>
+
+                <div class="dns-check-grid" id="dashDnsGrid">
+                  <div class="dns-metric-card">
+                    <div class="dns-label">SPF Record</div>
+                    <div class="dns-status valid" id="spfStatus">✓ Valid (~all / -all)</div>
+                  </div>
+                  <div class="dns-metric-card">
+                    <div class="dns-label">DKIM Signature</div>
+                    <div class="dns-status valid" id="dkimStatus">✓ 2048-bit Verified</div>
+                  </div>
+                  <div class="dns-metric-card">
+                    <div class="dns-label">DMARC Policy</div>
+                    <div class="dns-status valid" id="dmarcStatus">✓ Protected (p=reject)</div>
+                  </div>
+                  <div class="dns-metric-card">
+                    <div class="dns-label">MX Server</div>
+                    <div class="dns-status valid" id="mxStatus">✓ Resolving</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dns-input-row">
+                <input type="text" class="dns-input" id="domainInput" value="gmail.com" placeholder="Enter sending domain...">
+                <button class="dns-check-btn" onclick="window.sheetmerge.checkDomain()">Run DNS Scan</button>
+              </div>
+            </div>
+
+            <!-- Content Spam Analyzer -->
+            <div class="spam-tile">
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <h4 style="font-size:16px; font-weight:700;">45-Rule Spam Analyzer</h4>
+                  <span style="font-size:11px; background:rgba(139,92,246,0.18); color:#c084fc; padding:3px 8px; border-radius:6px; font-weight:700;">RFC 8058 Ready</span>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                  Real-time scan for caps ratio, spam trigger words, and link densities.
+                </p>
+
+                <div class="spam-score-display">
+                  <div class="spam-circle" id="spamScoreCircle">96</div>
+                  <div class="spam-summary-texts">
+                    <strong style="color:#10b981;" id="spamScoreLabel">High Deliverability Score</strong>
+                    <span style="color:var(--text-muted); font-size:12px;" id="spamScoreDetail">Clean headers · No deceptive subjects</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; color:var(--text-muted);">Inspect campaign template body:</span>
+                <button class="action-pill-btn" style="padding:6px 14px; font-size:11px;" onclick="window.sheetmerge.openComposeDrawer()">Inspect Body</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 4. Campaign Recipients & Single "Merge Status" Column Table -->
+          <div class="merge-table-tile">
+            <div class="table-header-bar">
+              <div class="table-title-area">
+                <h3>Campaign Recipients & Live Status</h3>
+                <p>Single 'Merge Status' Column Architecture · Automatic 5xx Bounce Suppression</p>
+              </div>
+
+              <div class="table-actions">
+                <input type="text" class="search-input-pill" id="tableSearchInput" placeholder="Filter recipients..." oninput="window.sheetmerge.filterRecipients()">
+                <button class="dispatch-btn" id="btnDispatchCampaign" onclick="window.sheetmerge.startCampaignDispatch()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Dispatch Campaign</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Ingestion Bar for Adding/Switching Sheets -->
+            <div class="sheet-ingest-bar">
+              <div class="sheet-input-wrap">
+                <span class="sheet-icon-prefix">🔗</span>
+                <input type="url" id="googleSheetUrlInput" class="sheet-url-input" placeholder="Paste Google Sheet URL..." />
+              </div>
+              <button class="sheet-btn sheet-btn-primary" onclick="window.sheetmerge.importGoogleSheet()" id="btnImportSheet">
+                <span>Connect Sheet</span>
               </button>
+              <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none;" onchange="window.sheetmerge.handleFileSelect(event)">
+              <button class="sheet-btn sheet-btn-secondary" onclick="document.getElementById('csvFileInput').click()">
+                <span>Upload CSV</span>
+              </button>
+              <a href="/api/sheet/template-csv" download class="sheet-btn sheet-btn-secondary" style="text-decoration:none;">
+                <span>Download Template</span>
+              </a>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+              <table class="merge-table" id="recipientsTable">
+                <thead>
+                  <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Recipient Email</th>
+                    <th>First Name</th>
+                    <th>Company</th>
+                    <th style="width:240px;">Merge Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recipientsTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+              <div class="table-empty-state" id="tableEmptyState" style="display:none;">
+                <p>No recipients found. Connect a Google Sheet or upload a CSV to get started.</p>
+              </div>
             </div>
           </div>
 
-          <!-- Real Google Sheets Ingestion & Analysis Hub Bar -->
-          <div class="sheet-ingest-bar">
-            <div class="sheet-input-wrap">
-              <span class="sheet-icon-prefix">🔗</span>
-              <input type="url" id="googleSheetUrlInput" class="sheet-url-input" placeholder="Paste public Google Sheet link (or click Load Sample)..." />
-            </div>
-            <button class="sheet-btn sheet-btn-primary" onclick="window.sheetmerge.importGoogleSheet()" id="btnImportSheet">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-              <span>Connect Sheet</span>
-            </button>
-            <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" style="display:none;" onchange="window.sheetmerge.handleFileSelect(event)">
-            <button class="sheet-btn sheet-btn-secondary" onclick="document.getElementById('csvFileInput').click()" title="Upload CSV or spreadsheet export">
-              📁 Upload CSV
-            </button>
-            <button class="sheet-btn sheet-btn-secondary" onclick="window.sheetmerge.loadSampleSheet()" title="Load test campaign dataset with 1 click">
-              📄 Sample Sheet
-            </button>
-            <button class="sheet-btn sheet-btn-secondary" onclick="window.sheetmerge.exportUpdatedCsv()" title="Download updated spreadsheet with YAMM Merge Status column">
-              📥 Export CSV
-            </button>
-          </div>
-
-          <!-- Built-In Sheet Analysis Banner -->
-          <div class="sheet-analysis-banner" id="sheetAnalysisBanner">
-            <div class="analysis-pills-row">
-              <span class="analysis-pill pill-valid" id="pillTotalRows">📊 <strong>10</strong> Total Recipients</span>
-              <span class="analysis-pill pill-pending" id="pillPendingRows">⏳ <strong>2</strong> Queued for Merge</span>
-              <span class="analysis-pill pill-valid" id="pillSentRows">✓ <strong>7</strong> Already Processed</span>
-              <span class="analysis-pill pill-bounced" id="pillBouncedRows">🛑 <strong>1</strong> Hard Bounce Suppressed</span>
-            </div>
-            <div style="font-size:11.5px; color:var(--text-muted);" id="detectedColsText">
-              Columns Detected: <strong style="color:var(--accent-cyan);">Email, First Name, Company, Merge Status</strong>
-            </div>
-          </div>
-
-          <table class="merge-table">
-            <thead>
-              <tr>
-                <th style="width: 28%;">Recipient Email</th>
-                <th style="width: 18%;">Merge Tokens (Name)</th>
-                <th style="width: 20%;">Company</th>
-                <th style="width: 20%;">Merge Status (Single Column)</th>
-                <th style="width: 14%;">Last Event</th>
-              </tr>
-            </thead>
-            <tbody id="recipientsTableBody">
-              <!-- Rendered dynamically -->
-            </tbody>
-          </table>
         </div>
-
       </section>
 
     </main>
-
   </div>
 
-  <!-- Slide-Out Compose & Template Drawer -->
-  <div class="drawer-backdrop" id="composeDrawerBackdrop" onclick="window.sheetmerge.closeComposeDrawer()"></div>
-  <aside class="compose-drawer" id="composeDrawer">
-    <div class="drawer-header">
-      <div>
-        <h3>Compose Mail Merge Template</h3>
-        <p style="font-size:12px; color:var(--text-muted);">Use {{Variable}} tags for personalized delivery</p>
+  <!-- ====================================================================
+       MODALS & DRAWERS
+       ==================================================================== -->
+
+  <!-- Add Google Account Modal -->
+  <div class="modal-overlay" id="addAccountModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Connect Google Account</h3>
+        <button class="close-btn" onclick="window.sheetmerge.closeAddAccountModal()">&times;</button>
       </div>
-      <button class="drawer-close-btn" onclick="window.sheetmerge.closeComposeDrawer()">✕</button>
-    </div>
-
-    <div class="drawer-body">
-      <div class="field-group">
-        <label class="field-label">
-          <span>Subject Line</span>
-          <span style="font-size:11px; color:var(--accent-cyan);">Click tag to insert:</span>
-        </label>
-        <div class="variable-pills">
-          <span class="var-pill" onclick="window.sheetmerge.insertToken('{{First Name}}')">{{First Name}}</span>
-          <span class="var-pill" onclick="window.sheetmerge.insertToken('{{Company}}')">{{Company}}</span>
-          <span class="var-pill" onclick="window.sheetmerge.insertToken('{{Email}}')">{{Email}}</span>
-        </div>
-        <input type="text" class="input-box" id="templateSubject" value="Quick question for {{First Name}} at {{Company}}">
-      </div>
-
-      <div class="field-group">
-        <label class="field-label">Email Body (HTML / Plain Text)</label>
-        <textarea class="textarea-box" id="templateBody">Hi {{First Name}},
-
-I noticed your team at {{Company}} is scaling operations this quarter. 
-
-We built SheetMerge Pro to handle high-deliverability mail merge with single-column tracking, automatic 5xx hard bounce suppression, and humanized jitter pacing (2s–5s) to safeguard Gmail sender reputation.
-
-Would you be open to a quick 5-minute walkthrough this Thursday?
-
-Best regards,
-Vaibhav</textarea>
-      </div>
-
-      <div class="field-group" style="background:var(--card-surface); padding:14px; border-radius:var(--radius-sub); border:1px solid var(--card-border-subtle);">
-        <label class="field-label" style="color:var(--accent-cyan);">Live Merge Preview (Row 1):</label>
-        <div id="mergePreviewContent" style="font-size:12px; color:var(--text-main); margin-top:6px; line-height:1.5;">
-          <!-- Live Preview Rendered Here -->
-        </div>
-      </div>
-
-      <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
-        <button class="action-pill-btn" style="justify-content:center; padding:10px;" onclick="window.sheetmerge.sendTestEmail()">
-          ✉️ Send Test Email to My Gmail
-        </button>
-        <button class="dispatch-btn" style="justify-content:center; padding:12px;" onclick="window.sheetmerge.startCampaignDispatch()">
-          🚀 Launch Live Mail Merge
-        </button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Connect Gmail / Sender Account Modal -->
-  <div class="drawer-backdrop" id="addAccountModal" onclick="if(event.target===this) window.sheetmerge.closeAddAccountModal()">
-    <div style="background:var(--card-dark); border:1px solid var(--accent-primary); border-radius:var(--radius-tile); padding:28px; width:100%; max-width:480px; margin:auto; margin-top:12vh; box-shadow:0 25px 70px rgba(0,0,0,0.85);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h3 style="font-size:18px; font-weight:700;">Connect Gmail Account</h3>
-        <span class="badge-shield">TLS 587</span>
-      </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
-        Deliver real emails through Gmail SMTP. Generates high inbox placement and bypasses spam filters.
-      </p>
-
-      <div class="field-group" style="margin-bottom:12px;">
-        <label class="field-label">Gmail Address</label>
-        <input type="email" class="input-box" id="newAccountEmail" placeholder="yourname@gmail.com">
-      </div>
-
-      <div class="field-group" style="margin-bottom:12px;">
-        <label class="field-label">Sender Display Name</label>
-        <input type="text" class="input-box" id="newAccountDisplayName" placeholder="e.g. Vaibhav Rastogi">
-      </div>
-
-      <div class="field-group" style="margin-bottom:8px;">
-        <label class="field-label">
-          <span>16-Character Google App Password</span>
-          <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style="color:var(--accent-cyan); text-decoration:none; font-size:11px;">
-            Get App Password ↗
-          </a>
-        </label>
-        <input type="password" class="input-box" id="newAccountAppPassword" placeholder="abcd efgh ijkl mnop">
-      </div>
-
-      <div style="background:rgba(255,255,255,0.04); border-radius:var(--radius-sub); padding:10px 12px; margin-bottom:16px; font-size:11.5px; color:var(--text-muted); line-height:1.4;">
-        💡 <strong>How to get an App Password:</strong> Google Account → Security → Turn on 2-Step Verification → Search "App passwords" → Name it "SheetMerge" → Copy the 16 letters.
-      </div>
-
-      <div id="smtpVerifyMsg" style="margin-bottom:14px; font-size:12px; display:none;"></div>
-
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="action-pill-btn" onclick="window.sheetmerge.closeAddAccountModal()">Cancel</button>
-        <button class="primary-add-btn" id="btnVerifySmtp" onclick="window.sheetmerge.verifyAndSaveAccount()">⚡ Test & Connect</button>
+      <div class="modal-body">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+          Authenticate real Gmail or Google Workspace accounts using a 16-character Google App Password.
+        </p>
+        <form id="modalAccountForm" onsubmit="window.sheetmerge.handleModalAccountSubmit(event)">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="modalAccEmail">Google / Gmail Address</label>
+            <input type="email" id="modalAccEmail" class="custom-input" placeholder="you@gmail.com" required />
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="modalAccName">Sender Display Name</label>
+            <input type="text" id="modalAccName" class="custom-input" placeholder="e.g. Vaibhav Rastogi" />
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="modalAccPassword">16-Character Google App Password</label>
+            <input type="password" id="modalAccPassword" class="custom-input" placeholder="xxxx yyyy zzzz wwww" required autocomplete="off" />
+            <div class="password-guidance" style="margin-top:6px;">
+              <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">Generate App Password at Google Account ↗</a>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-glass" onclick="window.sheetmerge.closeAddAccountModal()">Cancel</button>
+            <button type="submit" class="btn-primary" id="btnModalVerify">Verify & Connect</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Live Sequential Dispatch Progress HUD Modal -->
-  <div class="dispatch-hud-overlay" id="dispatchHudOverlay">
-    <div class="dispatch-hud-card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <h3 style="font-size:17px; font-weight:700; color:var(--text-main);">Sequential Mail Merge In Progress</h3>
-          <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Sending via Gmail SMTP relay with randomized jitter</p>
-        </div>
-        <span class="badge-shield" id="hudPacingBadge">2.0s–5.0s Jitter</span>
+  <!-- Service Compliance Specs Modal -->
+  <div class="modal-overlay" id="complianceModal">
+    <div class="modal-dialog" style="max-width:680px;">
+      <div class="modal-header">
+        <h3>Service Compliances & Deliverability Shield</h3>
+        <button class="close-btn" onclick="window.sheetmerge.closeComplianceModal()">&times;</button>
       </div>
-
-      <!-- Progress Track -->
-      <div class="hud-progress-track">
-        <div class="hud-progress-fill" id="hudProgressFill"></div>
-      </div>
-
-      <!-- Current Operation & Pacing Countdown -->
-      <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-main); margin-bottom:12px;">
-        <span id="hudStatusText">Preparing merge queue...</span>
-        <strong id="hudPercentText">0%</strong>
-      </div>
-
-      <div style="background:var(--card-surface); padding:10px 14px; border-radius:var(--radius-sub); border:1px solid var(--card-border-subtle); font-size:12px;">
-        <div style="color:var(--text-muted); margin-bottom:2px;">Current Recipient:</div>
-        <div style="font-weight:700; color:var(--accent-cyan); font-family:monospace;" id="hudCurrentEmail">—</div>
-        <div style="margin-top:4px; font-size:11px; color:var(--text-muted);" id="hudJitterText">Waiting for next dispatch window...</div>
-      </div>
-
-      <!-- Stats Grid -->
-      <div class="hud-stats-grid">
-        <div class="hud-stat-box">
-          <div class="val" id="hudSentCount" style="color:#10b981;">0</div>
-          <div class="lbl">Sent</div>
+      <div class="modal-body compliance-content">
+        <div class="compliance-item">
+          <h4>✓ Google & Yahoo 2024–2026 Bulk Sender Compliance</h4>
+          <p>Requires SPF, DKIM 2048-bit, and DMARC alignment. Enforces strict zero-spoofing TLS handshakes.</p>
         </div>
-        <div class="hud-stat-box">
-          <div class="val" id="hudBounceCount" style="color:#f43f5e;">0</div>
-          <div class="lbl">Bounced</div>
+        <div class="compliance-item">
+          <h4>✓ RFC 8058 One-Click List-Unsubscribe</h4>
+          <p>Automatic inclusion of <code>List-Unsubscribe: &lt;mailto:...&gt;</code> and <code>List-Unsubscribe-Post: List-Unsubscribe=One-Click</code> headers.</p>
         </div>
-        <div class="hud-stat-box">
-          <div class="val" id="hudQuotaCount" style="color:#a855f7;">42 / 50</div>
-          <div class="lbl">Quota</div>
+        <div class="compliance-item">
+          <h4>✓ 50-Send Daily Verified Quota Guard</h4>
+          <p>Protects free Gmail accounts by limiting verified sends to 50/day. Pools multiple accounts together to expand volume safely.</p>
         </div>
-        <div class="hud-stat-box">
-          <div class="val" id="hudRemainingCount" style="color:var(--accent-cyan);">0</div>
-          <div class="lbl">Pending</div>
+        <div class="compliance-item">
+          <h4>✓ Automatic 5xx Hard Bounce Suppression</h4>
+          <p>SMTP 550 permanent rejections are suppressed instantly to protect sender reputation and are never subtracted from your daily quota.</p>
+        </div>
+        <div class="compliance-item">
+          <h4>✓ Humanized Jitter Delay (2.0s–5.0s)</h4>
+          <p>Applies randomized jitter intervals between sequential dispatches to avoid detection by automated firewall spam filters.</p>
+        </div>
+        <div class="compliance-item">
+          <h4>✓ Zero Synthetic Data Guarantee</h4>
+          <p>No mock accounts or fake recipients are ever inserted into your database. The application operates strictly with real user inputs.</p>
         </div>
       </div>
-
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-        <button class="action-pill-btn" id="btnCancelDispatch" onclick="window.sheetmerge.stopDispatch()">Stop Dispatch</button>
+      <div class="modal-actions" style="padding:16px 20px; border-top:1px solid var(--card-border-subtle);">
+        <button type="button" class="btn-primary" onclick="window.sheetmerge.closeComplianceModal()">Acknowledge & Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Command Palette (Ctrl+K) -->
-  <div class="drawer-backdrop" id="commandPalette" onclick="if(event.target===this) window.sheetmerge.closePalette()">
-    <div style="background:var(--card-dark); border:1px solid var(--card-border); border-radius:var(--radius-tile); width:100%; max-width:540px; margin:auto; margin-top:12vh; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.8);">
-      <input type="text" id="paletteInput" class="input-box" style="border:none; border-bottom:1px solid var(--card-border-subtle); border-radius:0; padding:16px 20px; font-size:15px;" placeholder="Search recipients, sender accounts, or type a command...">
-      <div id="paletteResults" style="max-height:300px; overflow-y:auto; padding:10px 0;">
-        <!-- Results -->
+  <!-- Compose Merge Template Drawer -->
+  <div class="drawer-overlay" id="composeDrawer" style="display:none;">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <h3>Compose Campaign Template</h3>
+        <button class="close-btn" onclick="window.sheetmerge.closeComposeDrawer()">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label for="templateSubject">Subject Line</label>
+          <input type="text" id="templateSubject" class="custom-input" value="Quick question for {{First Name}} at {{Company}}" />
+        </div>
+        <div class="placeholder-tags">
+          <span class="tag-pill" onclick="window.sheetmerge.insertTag('{{First Name}}')">+ {{First Name}}</span>
+          <span class="tag-pill" onclick="window.sheetmerge.insertTag('{{Company}}')">+ {{Company}}</span>
+          <span class="tag-pill" onclick="window.sheetmerge.insertTag('{{Email}}')">+ {{Email}}</span>
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label for="templateBody">HTML Message Body</label>
+          <textarea id="templateBody" class="custom-textarea" rows="10"><p>Hi {{First Name}},</p>
+<p>I noticed your work at {{Company}} and wanted to follow up directly.</p>
+<p>Would you have 5 minutes for a quick chat this week?</p>
+<p>Best regards,<br>{{Sender Name}}</p></textarea>
+        </div>
+
+        <div class="drawer-test-send-box">
+          <h4>Send Live Test Email</h4>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Send a test message to your personal inbox to verify delivery before mass dispatching.</p>
+          <div style="display:flex; gap:8px;">
+            <input type="email" id="testEmailTarget" class="custom-input" placeholder="your_inbox@gmail.com" />
+            <button class="btn-primary" onclick="window.sheetmerge.sendTestEmail()">Send Test</button>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button class="btn-glass" onclick="window.sheetmerge.closeComposeDrawer()">Save Template</button>
       </div>
     </div>
   </div>

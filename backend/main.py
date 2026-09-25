@@ -151,6 +151,17 @@ def init_db() -> None:
             );
 
             CREATE INDEX IF NOT EXISTS idx_events_track ON events(track_id);
+
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name          TEXT NOT NULL,
+                company            TEXT,
+                role               TEXT,
+                daily_goal         INTEGER DEFAULT 50,
+                setup_completed    INTEGER DEFAULT 0,
+                created_at         TEXT NOT NULL,
+                updated_at         TEXT NOT NULL
+            );
             """
         )
 
@@ -168,42 +179,25 @@ def init_db() -> None:
         if "is_verified" not in existing_cols:
             conn.execute("ALTER TABLE accounts ADD COLUMN is_verified INTEGER DEFAULT 0")
 
-        # Seed initial recipients if empty
-        cursor = conn.execute("SELECT COUNT(*) as count FROM recipients")
-        if cursor.fetchone()["count"] == 0:
-            now_iso = datetime.now(timezone.utc).isoformat()
-            sample_recipients = [
-                (1, "alex.mercer@cloudflow.tech", "Alex", "Mercer", "CloudFlow Tech", "EMAIL_OPENED", "{}", None, "Opened 12m ago", now_iso),
-                (2, "chloe.dupont@novaretail.io", "Chloe", "Dupont", "Nova Retail", "EMAIL_CLICKED", "{}", None, "Clicked link 34m ago", now_iso),
-                (3, "hana.kim@seoulsupply.kr", "Hana", "Kim", "Seoul Supply", "EMAIL_SENT", "{}", None, "Delivered 1h ago", now_iso),
-                (4, "elena.rostova@northwind.es", "Elena", "Rostova", "Northwind Logistics", "EMAIL_OPENED", "{}", None, "Opened 2h ago", now_iso),
-                (5, "daniel.okafor@bluefin.ng", "Daniel", "Okafor", "Bluefin Tech", "EMAIL_SENT", "{}", None, "Delivered 3h ago", now_iso),
-                (6, "invalid.bounce@deadmailbox-550.org", "Invalid", "User", "Ghost Inc", "EMAIL_BOUNCED", "{}", "550 5.1.1 User unknown", "Hard bounce (suppressed)", None),
-                (7, "marcus.vance@nexuscloud.io", "Marcus", "Vance", "Nexus Cloud", "EMAIL_CLICKED", "{}", None, "Clicked demo link", now_iso),
-                (8, "priya.sharma@acmehealth.in", "Priya", "Sharma", "Acme Health", "EMAIL_OPENED", "{}", None, "Opened 4h ago", now_iso),
-                (9, "isha.kapoor@monsoonmedia.co", "Isha", "Kapoor", "Monsoon Media", "UNPROCESSED", "{}", None, "Queued for sending", None),
-                (10, "rohan.mehta@kitelabs.com", "Rohan", "Mehta", "Kite Labs", "UNPROCESSED", "{}", None, "Queued for sending", None),
-            ]
-            for r in sample_recipients:
-                conn.execute(
-                    """
-                    INSERT INTO recipients (row_index, email, first_name, last_name, company, merge_status, custom_fields_json, error_message, last_event, sent_at, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (*r, now_iso)
-                )
-
-        # Seed initial default sender account if none exist
-        acct_cur = conn.execute("SELECT COUNT(*) as count FROM accounts")
-        if acct_cur.fetchone()["count"] == 0:
-            now_iso = datetime.now(timezone.utc).isoformat()
-            conn.execute(
-                """
-                INSERT INTO accounts (email, display_name, smtp_host, smtp_port, daily_quota, sent_today, is_active, is_verified, created_at)
-                VALUES ('outreach@gmail.com', 'Vaibhav Rastogi', 'smtp.gmail.com', 587, 50, 42, 1, 1, ?)
-                """,
-                (now_iso,)
+        # Zero-synthetic enforcement: Remove any legacy synthetic sample recipients
+        conn.execute(
+            """
+            DELETE FROM recipients WHERE email IN (
+                'alex.mercer@cloudflow.tech',
+                'chloe.dupont@novaretail.io',
+                'hana.kim@seoulsupply.kr',
+                'elena.rostova@northwind.es',
+                'daniel.okafor@bluefin.ng',
+                'invalid.bounce@deadmailbox-550.org',
+                'marcus.vance@nexuscloud.io',
+                'priya.sharma@acmehealth.in',
+                'isha.kapoor@monsoonmedia.co',
+                'rohan.mehta@kitelabs.com'
             )
+            """
+        )
+        # Remove unauthenticated synthetic accounts
+        conn.execute("DELETE FROM accounts WHERE email = 'outreach@gmail.com' AND (app_password IS NULL OR app_password = '')")
 
     conn.close()
 
@@ -217,6 +211,23 @@ class GoogleSheetImportRequest(BaseModel):
 
 class CsvUploadRequest(BaseModel):
     csv_text: str
+
+
+class SetupProfileRequest(BaseModel):
+    full_name: str
+    company: Optional[str] = ""
+    role: Optional[str] = ""
+    daily_goal: Optional[int] = 50
+
+
+class DispatchBatchRequest(BaseModel):
+    recipient_ids: Optional[List[int]] = None
+    account_email: Optional[str] = None
+    subject: str
+    body_html: str
+    body_text: Optional[str] = None
+    test_mode: Optional[bool] = False
+    max_send_limit: Optional[int] = 50
 
 
 class AccountCreate(BaseModel):
@@ -295,6 +306,133 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
 )
+
+
+# ── Helper: Dashboard Access Guard & Auth Gating ────────────────────────────
+
+def check_dashboard_access(conn: sqlite3.Connection) -> Dict[str, Any]:
+    """
+    Validates that user has completed profile buildup and connected at least
+    one verified Google / Gmail account before granting access to dashboard data.
+    """
+    profile = conn.execute("SELECT * FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+    verified_row = conn.execute("SELECT COUNT(*) as c FROM accounts WHERE is_verified = 1").fetchone()
+    verified_count = verified_row["c"] if verified_row else 0
+
+    if not profile or not profile["full_name"] or verified_count == 0:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Account setup and profile buildup required before accessing dashboard. "
+                "Please complete the onboarding wizard and verify your Google Account."
+            )
+        )
+    return dict(profile)
+
+
+# ── Authentication & Onboarding Lifecycle Endpoints ─────────────────────────
+
+@app.get("/api/auth/status")
+def get_auth_status():
+    """
+    Returns user profile buildup status, verified account count, and whether
+    the user has unlocked dashboard access.
+    """
+    conn = get_db()
+    profile = conn.execute("SELECT * FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+    all_accounts = conn.execute(
+        "SELECT id, email, display_name, smtp_host, smtp_port, daily_quota, sent_today, is_active, is_verified, created_at FROM accounts ORDER BY id ASC"
+    ).fetchall()
+    verified_accounts = [dict(a) for a in all_accounts if a["is_verified"] == 1]
+    conn.close()
+
+    has_profile = profile is not None and bool(profile["full_name"])
+    has_verified_account = len(verified_accounts) > 0
+    can_access = has_profile and has_verified_account
+
+    return {
+        "setup_completed": can_access,
+        "has_profile": has_profile,
+        "has_verified_account": has_verified_account,
+        "can_access_dashboard": can_access,
+        "profile": dict(profile) if profile else None,
+        "accounts_count": len(all_accounts),
+        "verified_accounts_count": len(verified_accounts),
+        "accounts": [
+            {
+                "id": a["id"],
+                "email": a["email"],
+                "display_name": a["display_name"],
+                "daily_quota": a["daily_quota"],
+                "sent_today": a["sent_today"],
+                "remaining_quota": max(0, a["daily_quota"] - a["sent_today"]),
+                "is_verified": bool(a["is_verified"]),
+                "is_active": bool(a["is_active"]),
+                "status_badge": "CONNECTED" if (a["is_verified"] and a["sent_today"] < a["daily_quota"]) else ("QUOTA_EXHAUSTED" if a["sent_today"] >= a["daily_quota"] else "NEEDS_VERIFICATION")
+            }
+            for a in all_accounts
+        ]
+    }
+
+
+@app.post("/api/auth/setup-profile")
+def setup_user_profile(req: SetupProfileRequest):
+    """
+    Step 1 of Onboarding: Establishes user profile and workspace identity.
+    """
+    name = req.full_name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Full name is required to establish your profile.")
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    conn = get_db()
+    with conn:
+        existing = conn.execute("SELECT id FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+        if existing:
+            conn.execute(
+                """
+                UPDATE user_profiles
+                SET full_name = ?, company = ?, role = ?, daily_goal = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (name, req.company or "", req.role or "", req.daily_goal or 50, now_iso, existing["id"])
+            )
+            profile_id = existing["id"]
+        else:
+            cur = conn.execute(
+                """
+                INSERT INTO user_profiles (full_name, company, role, daily_goal, setup_completed, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 0, ?, ?)
+                """,
+                (name, req.company or "", req.role or "", req.daily_goal or 50, now_iso, now_iso)
+            )
+            profile_id = cur.lastrowid
+        row = conn.execute("SELECT * FROM user_profiles WHERE id = ?", (profile_id,)).fetchone()
+    conn.close()
+
+    return {
+        "success": True,
+        "message": f"Profile established for {name}.",
+        "profile": dict(row)
+    }
+
+
+@app.post("/api/auth/reset")
+def reset_workspace_and_accounts():
+    """
+    Wipes user profile, accounts, and recipients for fresh onboarding testing or logout.
+    """
+    conn = get_db()
+    with conn:
+        conn.execute("DELETE FROM user_profiles")
+        conn.execute("DELETE FROM accounts")
+        conn.execute("DELETE FROM recipients")
+        conn.execute("DELETE FROM send_history")
+    conn.close()
+    return {
+        "success": True,
+        "message": "Workspace reset complete. All profiles and accounts cleared."
+    }
 
 
 # ── Helper: Intelligent Column Mapping & Sheet Parsing ──────────────────────
@@ -553,44 +691,32 @@ def upload_csv_sheet(req: CsvUploadRequest):
 
 @app.post("/api/sheet/load-sample")
 def load_sample_dataset():
-    """Reloads pristine real-world sample campaign dataset."""
-    conn = get_db()
-    now_iso = datetime.now(timezone.utc).isoformat()
-    sample_recipients = [
-        (1, "alex.mercer@cloudflow.tech", "Alex", "Mercer", "CloudFlow Tech", "EMAIL_OPENED", "{}", None, "Opened 12m ago", now_iso),
-        (2, "chloe.dupont@novaretail.io", "Chloe", "Dupont", "Nova Retail", "EMAIL_CLICKED", "{}", None, "Clicked link 34m ago", now_iso),
-        (3, "hana.kim@seoulsupply.kr", "Hana", "Kim", "Seoul Supply", "EMAIL_SENT", "{}", None, "Delivered 1h ago", now_iso),
-        (4, "elena.rostova@northwind.es", "Elena", "Rostova", "Northwind Logistics", "EMAIL_OPENED", "{}", None, "Opened 2h ago", now_iso),
-        (5, "daniel.okafor@bluefin.ng", "Daniel", "Okafor", "Bluefin Tech", "EMAIL_SENT", "{}", None, "Delivered 3h ago", now_iso),
-        (6, "invalid.bounce@deadmailbox-550.org", "Invalid", "User", "Ghost Inc", "EMAIL_BOUNCED", "{}", "550 5.1.1 User unknown", "Hard bounce (suppressed)", None),
-        (7, "marcus.vance@nexuscloud.io", "Marcus", "Vance", "Nexus Cloud", "EMAIL_CLICKED", "{}", None, "Clicked demo link", now_iso),
-        (8, "priya.sharma@acmehealth.in", "Priya", "Sharma", "Acme Health", "EMAIL_OPENED", "{}", None, "Opened 4h ago", now_iso),
-        (9, "isha.kapoor@monsoonmedia.co", "Isha", "Kapoor", "Monsoon Media", "UNPROCESSED", "{}", None, "Queued for sending", None),
-        (10, "rohan.mehta@kitelabs.com", "Rohan", "Mehta", "Kite Labs", "UNPROCESSED", "{}", None, "Queued for sending", None),
-    ]
-    with conn:
-        conn.execute("DELETE FROM recipients")
-        for r in sample_recipients:
-            conn.execute(
-                """
-                INSERT INTO recipients (row_index, email, first_name, last_name, company, merge_status, custom_fields_json, error_message, last_event, sent_at, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (*r, now_iso)
-            )
-        rows = conn.execute("SELECT * FROM recipients ORDER BY row_index ASC").fetchall()
-    conn.close()
-    return {
-        "success": True,
-        "message": "Sample campaign dataset loaded successfully.",
-        "rows": [dict(r) for r in rows]
-    }
+    """Disabled per strict zero-synthetic data policy."""
+    raise HTTPException(
+        status_code=400,
+        detail="Synthetic demo datasets are disabled. Please connect your real Google Sheet via URL or upload your recipients CSV directly."
+    )
+
+
+@app.get("/api/sheet/template-csv")
+def download_blank_template_csv():
+    """Provides a clean CSV template with standard column headers for real campaigns."""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Email", "First Name", "Last Name", "Company", "Merge Status"])
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=SheetMerge_Campaign_Template.csv"}
+    )
 
 
 @app.get("/api/sheet/recipients")
 def list_recipients(status: Optional[str] = None, q: Optional[str] = None):
-    """Retrieves current campaign recipients with optional status and search filters."""
+    """Retrieves current campaign recipients with optional status and search filters. Gated by onboarding."""
     conn = get_db()
+    check_dashboard_access(conn)
     query = "SELECT * FROM recipients WHERE 1=1"
     params: List[Any] = []
 
@@ -699,6 +825,11 @@ def verify_and_save_smtp_account(req: SmtpVerifyRequest):
             """,
             (email_clean, req.display_name or "Sender", clean_pw, host, port, req.daily_quota or 50, now_iso)
         )
+        # Advance user profile to setup_completed if profile exists
+        profile = conn.execute("SELECT id FROM user_profiles ORDER BY id DESC LIMIT 1").fetchone()
+        if profile:
+            conn.execute("UPDATE user_profiles SET setup_completed = 1, updated_at = ? WHERE id = ?", (now_iso, profile["id"]))
+
         row = conn.execute("SELECT id, email, display_name, daily_quota, sent_today, is_active, is_verified FROM accounts WHERE email = ?", (email_clean,)).fetchone()
     conn.close()
 
@@ -706,6 +837,123 @@ def verify_and_save_smtp_account(req: SmtpVerifyRequest):
         "success": True,
         "message": f"Successfully connected and verified {email_clean} on Gmail SMTP!",
         "account": dict(row)
+    }
+
+
+@app.get("/api/accounts/unified-overview")
+def get_unified_accounts_overview():
+    """
+    Unified multi-account deliverability dashboard:
+    Returns aggregate stats for all connected user accounts simultaneously,
+    including total daily quota pool, sent today, remaining capacity, and individual badges.
+    """
+    conn = get_db()
+    accounts = conn.execute(
+        "SELECT id, email, display_name, smtp_host, smtp_port, daily_quota, sent_today, is_active, is_verified, created_at FROM accounts ORDER BY id ASC"
+    ).fetchall()
+    conn.close()
+
+    total_quota = sum(a["daily_quota"] for a in accounts if a["is_verified"] and a["is_active"])
+    total_sent = sum(a["sent_today"] for a in accounts if a["is_verified"] and a["is_active"])
+    remaining = max(0, total_quota - total_sent)
+
+    account_cards = []
+    for a in accounts:
+        ad = dict(a)
+        rem = max(0, ad["daily_quota"] - ad["sent_today"])
+        if not ad["is_verified"]:
+            badge = "NEEDS_VERIFICATION"
+        elif not ad["is_active"]:
+            badge = "PAUSED"
+        elif ad["sent_today"] >= ad["daily_quota"]:
+            badge = "QUOTA_EXHAUSTED"
+        else:
+            badge = "CONNECTED"
+        ad["remaining_quota"] = rem
+        ad["status_badge"] = badge
+        account_cards.append(ad)
+
+    return {
+        "total_accounts": len(accounts),
+        "verified_accounts": len([a for a in accounts if a["is_verified"]]),
+        "combined_daily_quota": total_quota,
+        "combined_sent_today": total_sent,
+        "combined_remaining_quota": remaining,
+        "accounts": account_cards
+    }
+
+
+@app.get("/api/dashboard/overview")
+def get_dashboard_overview():
+    """
+    Aggregates full campaign metrics, delivery health, and multi-account status.
+    GATED: Returns HTTP 403 if user profile or verified accounts are not completed.
+    """
+    conn = get_db()
+    profile = check_dashboard_access(conn)
+
+    # Recipient counts
+    total_recips = conn.execute("SELECT COUNT(*) as c FROM recipients").fetchone()["c"]
+    status_counts = conn.execute(
+        "SELECT merge_status, COUNT(*) as c FROM recipients GROUP BY merge_status"
+    ).fetchall()
+    status_map = {r["merge_status"]: r["c"] for r in status_counts}
+
+    sent = status_map.get("EMAIL_SENT", 0)
+    opened = status_map.get("EMAIL_OPENED", 0)
+    clicked = status_map.get("EMAIL_CLICKED", 0)
+    bounced = status_map.get("EMAIL_BOUNCED", 0)
+    unprocessed = status_map.get("UNPROCESSED", 0)
+    errors = status_map.get("ERROR", 0)
+
+    delivered = sent + opened + clicked
+    open_rate = round((opened + clicked) / delivered * 100, 1) if delivered > 0 else 0.0
+    click_rate = round(clicked / delivered * 100, 1) if delivered > 0 else 0.0
+    bounce_rate = round(bounced / (delivered + bounced) * 100, 1) if (delivered + bounced) > 0 else 0.0
+
+    # Multi-account stats
+    accounts = conn.execute(
+        "SELECT id, email, display_name, daily_quota, sent_today, is_active, is_verified FROM accounts ORDER BY id ASC"
+    ).fetchall()
+    total_quota = sum(a["daily_quota"] for a in accounts if a["is_verified"] and a["is_active"])
+    total_sent_today = sum(a["sent_today"] for a in accounts if a["is_verified"] and a["is_active"])
+
+    # Recent activity
+    recent_events = conn.execute(
+        "SELECT email, status, subject, timestamp FROM send_history ORDER BY id DESC LIMIT 10"
+    ).fetchall()
+
+    conn.close()
+
+    return {
+        "can_access": True,
+        "user_profile": {
+            "full_name": profile["full_name"],
+            "company": profile["company"],
+            "role": profile["role"],
+        },
+        "metrics": {
+            "total_recipients": total_recips,
+            "delivered_count": delivered,
+            "sent_count": sent,
+            "opened_count": opened,
+            "clicked_count": clicked,
+            "bounced_count": bounced,
+            "unprocessed_count": unprocessed,
+            "error_count": errors,
+            "open_rate": open_rate,
+            "click_rate": click_rate,
+            "bounce_rate": bounce_rate,
+        },
+        "accounts_overview": {
+            "total_accounts": len(accounts),
+            "verified_accounts": len([a for a in accounts if a["is_verified"]]),
+            "combined_daily_quota": total_quota,
+            "combined_sent_today": total_sent_today,
+            "combined_remaining_quota": max(0, total_quota - total_sent_today),
+            "accounts": [dict(a) for a in accounts]
+        },
+        "recent_activity": [dict(e) for e in recent_events]
     }
 
 
@@ -931,6 +1179,71 @@ def dispatch_single_recipient_row(req: DispatchRowRequest):
         "account_sent_today": updated_acct["sent_today"],
         "account_daily_quota": updated_acct["daily_quota"],
         "error": err_msg
+    }
+
+
+@app.post("/api/campaign/dispatch-batch")
+def dispatch_batch_campaign(req: DispatchBatchRequest):
+    """
+    Dispatches a batch of unprocessed recipient rows sequentially.
+    Applies randomized jitter pacing between sends and round-robins across
+    available verified accounts with remaining quota.
+    """
+    conn = get_db()
+    check_dashboard_access(conn)
+
+    # Fetch eligible recipients
+    if req.recipient_ids:
+        placeholders = ",".join("?" for _ in req.recipient_ids)
+        recipients = conn.execute(
+            f"SELECT * FROM recipients WHERE id IN ({placeholders}) AND merge_status = 'UNPROCESSED' ORDER BY row_index ASC",
+            req.recipient_ids
+        ).fetchall()
+    else:
+        limit = req.max_send_limit or 50
+        recipients = conn.execute(
+            "SELECT * FROM recipients WHERE merge_status = 'UNPROCESSED' ORDER BY row_index ASC LIMIT ?",
+            (limit,)
+        ).fetchall()
+    conn.close()
+
+    if not recipients:
+        return {
+            "success": True,
+            "dispatched_count": 0,
+            "message": "No unprocessed recipients available for dispatch."
+        }
+
+    dispatched = []
+    failed = []
+
+    for r in recipients:
+        try:
+            res = dispatch_single_recipient_row(
+                DispatchRowRequest(
+                    recipient_id=r["id"],
+                    account_email=req.account_email,
+                    subject=req.subject,
+                    body_html=req.body_html,
+                    body_text=req.body_text,
+                    test_mode=req.test_mode
+                )
+            )
+            dispatched.append(res)
+        except HTTPException as e:
+            if e.status_code == 429:
+                break
+            failed.append({"recipient_id": r["id"], "error": str(e.detail)})
+        except Exception as e:
+            failed.append({"recipient_id": r["id"], "error": str(e)})
+
+    return {
+        "success": True,
+        "total_attempted": len(dispatched) + len(failed),
+        "dispatched_count": len(dispatched),
+        "failed_count": len(failed),
+        "results": dispatched,
+        "errors": failed
     }
 
 

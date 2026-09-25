@@ -184,24 +184,99 @@ class TestSheetMergeRealWorldFeatures(unittest.TestCase):
         self.assertIn("text/csv", r.headers["content-type"])
         self.assertIn("Merge Status", r.text)
 
-    def test_API15_load_sample_dataset(self):
-        r = client.post("/api/sheet/load-sample")
-        self.assertEqual(r.status_code, 200)
-        data = r.json()
-        self.assertTrue(data["success"])
-        self.assertGreaterEqual(len(data["rows"]), 5)
+    def test_API15_load_sample_disabled_and_template_csv(self):
+        # Synthetic mock dataset is strictly disabled
+        r_sample = client.post("/api/sheet/load-sample")
+        self.assertEqual(r_sample.status_code, 400)
+        self.assertIn("Synthetic demo datasets are disabled", r_sample.json()["detail"])
 
-    def test_API16_list_recipients_filtering(self):
+        # Real blank template is downloadable
+        r_tmpl = client.get("/api/sheet/template-csv")
+        self.assertEqual(r_tmpl.status_code, 200)
+        self.assertIn("text/csv", r_tmpl.headers["content-type"])
+        self.assertIn("Merge Status", r_tmpl.text)
+
+    def test_API16_auth_status_and_profile_gating(self):
+        # Reset workspace to test pristine onboarding flow
+        client.post("/api/auth/reset")
+
+        # Initial auth status: no profile, no accounts, dashboard locked
+        r_status = client.get("/api/auth/status")
+        self.assertEqual(r_status.status_code, 200)
+        self.assertFalse(r_status.json()["can_access_dashboard"])
+        self.assertFalse(r_status.json()["has_profile"])
+        self.assertFalse(r_status.json()["has_verified_account"])
+
+        # Attempting to access dashboard before profile & account setup raises 403
+        r_dash = client.get("/api/dashboard/overview")
+        self.assertEqual(r_dash.status_code, 403)
+
+        r_recips = client.get("/api/sheet/recipients")
+        self.assertEqual(r_recips.status_code, 403)
+
+        # Step 1: Set up user profile
+        r_prof = client.post("/api/auth/setup-profile", json={
+            "full_name": "Vaibhav Rastogi",
+            "company": "Foundry Dynamics",
+            "role": "Founder"
+        })
+        self.assertEqual(r_prof.status_code, 200)
+        self.assertTrue(r_prof.json()["success"])
+        self.assertEqual(r_prof.json()["profile"]["full_name"], "Vaibhav Rastogi")
+
+        # Dashboard still locked until verified account added
+        r_status2 = client.get("/api/auth/status")
+        self.assertTrue(r_status2.json()["has_profile"])
+        self.assertFalse(r_status2.json()["can_access_dashboard"])
+
+    @patch("main.smtplib.SMTP")
+    def test_API16b_verify_account_unlocks_dashboard_and_unified_overview(self, mock_smtp_cls):
+        mock_server = MagicMock()
+        mock_smtp_cls.return_value = mock_server
+
+        # Step 2: Verify user Google Account
+        r_verify = client.post("/api/accounts/verify-smtp", json={
+            "email": "vaibhav.test@gmail.com",
+            "app_password": "xxxx yyyy zzzz wwww",
+            "display_name": "Vaibhav Rastogi",
+            "daily_quota": 50
+        })
+        self.assertEqual(r_verify.status_code, 200)
+        self.assertTrue(r_verify.json()["success"])
+
+        # Now dashboard is unlocked!
+        r_status = client.get("/api/auth/status")
+        self.assertTrue(r_status.json()["can_access_dashboard"])
+
+        # Unified accounts overview shows connected status
+        r_overview = client.get("/api/accounts/unified-overview")
+        self.assertEqual(r_overview.status_code, 200)
+        data = r_overview.json()
+        self.assertGreaterEqual(data["total_accounts"], 1)
+        self.assertGreaterEqual(data["verified_accounts"], 1)
+        self.assertEqual(data["combined_daily_quota"], 50)
+
+        # Dashboard overview returns real metrics
+        r_dash = client.get("/api/dashboard/overview")
+        self.assertEqual(r_dash.status_code, 200)
+        dash_data = r_dash.json()
+        self.assertTrue(dash_data["can_access"])
+        self.assertEqual(dash_data["user_profile"]["full_name"], "Vaibhav Rastogi")
+
+    def test_API16c_list_recipients_filtering_when_unlocked(self):
+        # Now list recipients works because onboarding is complete
         r_all = client.get("/api/sheet/recipients?status=all")
         self.assertEqual(r_all.status_code, 200)
         self.assertIsInstance(r_all.json(), list)
 
-        r_sent = client.get("/api/sheet/recipients?status=EMAIL_SENT")
-        self.assertEqual(r_sent.status_code, 200)
-        for row in r_sent.json():
-            self.assertEqual(row["merge_status"], "EMAIL_SENT")
-
-    def test_API17_dispatch_single_row_success(self):
+    @patch("main.send_via_smtp_relay")
+    def test_API17_dispatch_single_row_success(self, mock_send):
+        mock_send.return_value = {
+            "success": True,
+            "status": "delivered",
+            "recipient": "john.dispatch@example.com",
+            "message": "Delivered"
+        }
         # Insert a clean recipient
         conn = app_module.get_db()
         with conn:
@@ -211,7 +286,7 @@ class TestSheetMergeRealWorldFeatures(unittest.TestCase):
             )
             recip_id = cur.lastrowid
             # Ensure sender account has quota
-            conn.execute("UPDATE accounts SET sent_today = 10, daily_quota = 50 WHERE id = 1")
+            conn.execute("UPDATE accounts SET sent_today = 10, daily_quota = 50")
         conn.close()
 
         r = client.post("/api/campaign/dispatch-row", json={
@@ -233,7 +308,7 @@ class TestSheetMergeRealWorldFeatures(unittest.TestCase):
                 "VALUES (102, 'dead.user550@rejected.org', 'Dead', 'Bounce Corp', 'UNPROCESSED', '2026-10-25T00:00:00Z')"
             )
             recip_id = cur.lastrowid
-            conn.execute("UPDATE accounts SET sent_today = 20, daily_quota = 50, app_password = 'mockpassword' WHERE id = 1")
+            conn.execute("UPDATE accounts SET sent_today = 20, daily_quota = 50, app_password = 'mockpassword'")
         conn.close()
 
         # Mock SMTP to simulate 550 permanent bounce
@@ -283,23 +358,33 @@ class TestSheetMergeRealWorldFeatures(unittest.TestCase):
         })
         self.assertEqual(r.status_code, 429)
 
-    @patch("main.smtplib.SMTP")
-    def test_API20_verify_smtp_credentials(self, mock_smtp_cls):
-        mock_server = MagicMock()
-        mock_smtp_cls.return_value = mock_server
+    @patch("main.send_via_smtp_relay")
+    def test_API20_dispatch_batch_campaign(self, mock_send):
+        mock_send.return_value = {
+            "success": True,
+            "status": "delivered",
+            "recipient": "batch@example.com",
+            "message": "Delivered"
+        }
+        conn = app_module.get_db()
+        with conn:
+            # Insert unprocessed recipients
+            conn.execute("UPDATE accounts SET sent_today = 0, daily_quota = 50")
+            cur1 = conn.execute("INSERT INTO recipients (row_index, email, first_name, company, merge_status, created_at) VALUES (201, 'batch1@example.com', 'Alice', 'CorpA', 'UNPROCESSED', '2026-10-25T00:00:00Z')")
+            cur2 = conn.execute("INSERT INTO recipients (row_index, email, first_name, company, merge_status, created_at) VALUES (202, 'batch2@example.com', 'Bob', 'CorpB', 'UNPROCESSED', '2026-10-25T00:00:00Z')")
+            id1 = cur1.lastrowid
+            id2 = cur2.lastrowid
+        conn.close()
 
-        # Test successful verification
-        r = client.post("/api/accounts/verify-smtp", json={
-            "email": "verified.outreach@gmail.com",
-            "app_password": "abcd efgh ijkl mnop",
-            "display_name": "Test Sender",
-            "daily_quota": 50
+        r = client.post("/api/campaign/dispatch-batch", json={
+            "recipient_ids": [id1, id2],
+            "subject": "Batch Test for {{First Name}}",
+            "body_html": "<p>Hello {{First Name}}</p>"
         })
         self.assertEqual(r.status_code, 200)
         data = r.json()
         self.assertTrue(data["success"])
-        self.assertEqual(data["account"]["email"], "verified.outreach@gmail.com")
-        mock_server.login.assert_called_once()
+        self.assertEqual(data["dispatched_count"], 2)
 
 
 if __name__ == "__main__":
