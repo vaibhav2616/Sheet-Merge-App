@@ -23,15 +23,29 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import unquote
 
+import sys
+from pathlib import Path
+
+# Ensure backend directory is always in sys.path regardless of execution context
+_BACKEND_DIR = Path(__file__).resolve().parent
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 
-from domain_security import check_domain_dns
-from spam_analyzer import analyze_email_content, verify_email_address
-from smtp_relay import SMTPRelayConfig, get_random_throttle_delay, send_via_smtp_relay
+try:
+    from backend.domain_security import check_domain_dns
+    from backend.spam_analyzer import analyze_email_content, verify_email_address
+    from backend.smtp_relay import SMTPRelayConfig, get_random_throttle_delay, send_via_smtp_relay
+except ImportError:
+    from domain_security import check_domain_dns
+    from spam_analyzer import analyze_email_content, verify_email_address
+    from smtp_relay import SMTPRelayConfig, get_random_throttle_delay, send_via_smtp_relay
+
 
 
 # ── Database & Directories ──────────────────────────────────────────────────
