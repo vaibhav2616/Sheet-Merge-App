@@ -75,3 +75,5 @@ Open `http://localhost:8000`.
 4. **Draft & Preview:** Open the composer drawer to compose your email with `{{First Name}}` and `{{Company}}` tags. Inspect the real-time personalization preview for Row 1.
 5. **Dispatch Campaign:** Click 'Dispatch Campaign' to send sequentially with humanized jitter.
 6. **Sync Status:** Click 'Export Updated CSV' to re-import into Google Sheets with updated single-column `Merge Status`.
+
+IN PROGRESS.......
